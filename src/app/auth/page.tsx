@@ -36,7 +36,7 @@ export default function AuthPage() {
     <div className="flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in">
       <div className="w-full max-w-sm bg-base-200 rounded-2xl border border-base-300 p-6 shadow-xl">
         <div className="text-center mb-8">
-          <h2 className="font-display text-4xl text-primary tracking-wide mb-2">FitEvo</h2>
+          <h2 className="font-display text-4xl text-primary tracking-wide mb-2">MY GYM</h2>
           <p className="text-sm text-neutral-content">Acesse sua conta para continuar</p>
         </div>
         

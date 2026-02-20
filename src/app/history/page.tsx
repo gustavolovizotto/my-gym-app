@@ -123,7 +123,7 @@ export default function HistoryPage() {
   const totalWorkouts = sessions.length;
 
   return (
-    <div className="px-4 pt-6 pb-4 animate-fade-in">
+    <div className="px-4 pt-6 pb-24 animate-fade-in">
       <header className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/")} className="btn btn-circle btn-sm btn-ghost">
@@ -133,7 +133,7 @@ export default function HistoryPage() {
             <h1 className="font-display text-2xl text-base-content tracking-wide leading-none">
               Histórico
             </h1>
-            <p className="text-xs text-neutral-content">Sua evolução</p>
+            <p className="text-xs text-neutral-content">Seus treinos passados</p>
           </div>
         </div>
         <SyncBadge />

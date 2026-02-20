@@ -1,6 +1,6 @@
 {
-  "name": "Fitness Evolution App",
-  "short_name": "FitEvo",
+  "name": "MY GYM",
+  "short_name": "MY GYM",
   "description": "App de musculação focado em progressão de carga",
   "start_url": "/",
   "display": "standalone",

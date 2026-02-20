@@ -66,7 +66,7 @@ function TodayWorkoutSelection() {
   }
 
   return (
-    <div className="px-4 pt-6 pb-4 animate-fade-in">
+    <div className="px-4 pt-6 pb-24 animate-fade-in">
       <header className="mb-8 text-center">
         <h1 className="font-display text-3xl text-base-content tracking-wide leading-tight uppercase">
           O que você vai<br/><span className="text-primary">treinar hoje?</span>
@@ -207,7 +207,7 @@ function WorkoutContent() {
   }
 
   return (
-    <div className="px-4 pt-6 pb-4 animate-fade-in">
+    <div className="px-4 pt-6 pb-24 animate-fade-in">
       <header className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push(divisionId ? `/division/${divisionId}` : "/")} className="btn btn-circle btn-sm btn-ghost">

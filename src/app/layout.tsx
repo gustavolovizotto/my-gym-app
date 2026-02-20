@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fitness Evolution App",
+  title: "MY GYM",
   description: "App de musculação focado em progressão de carga",
   manifest: "/manifest.json",
 };

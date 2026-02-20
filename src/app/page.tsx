@@ -111,7 +111,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="px-4 pt-6 pb-4 animate-fade-in">
+    <div className="px-4 pt-6 pb-24 animate-fade-in">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>

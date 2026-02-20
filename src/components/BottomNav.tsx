@@ -1,18 +1,39 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Dumbbell, TrendingUp, User } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, User, History } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Dumbbell, label: "Treino", path: "/workout" },
-  { icon: TrendingUp, label: "Evolução", path: "/history" },
+  { icon: History, label: "Histórico", path: "/history" },
+  { icon: TrendingUp, label: "Evolução", path: "/evolution" },
   { icon: User, label: "Perfil", path: "/profile" },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (!isAuthenticated) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
