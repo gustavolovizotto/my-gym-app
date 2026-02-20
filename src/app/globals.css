@@ -1,26 +1,77 @@
 @import "tailwindcss";
+@plugin "daisyui" {
+  themes: dark;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@theme {
+  --font-display: "Bebas Neue", "Inter", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  
+  --color-gym-green: hsl(142 71% 45%);
+  --color-gym-green-glow: hsl(142 71% 55%);
+  --color-gym-orange: hsl(25 95% 53%);
+  --color-gym-surface: hsl(0 0% 10%);
+  --color-gym-surface-2: hsl(0 0% 13%);
+  --color-gym-surface-3: hsl(0 0% 17%);
+  --color-gym-border: hsl(0 0% 16%);
+}
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Override daisyUI dark theme with Lovable's dark gym theme */
+  --color-base-100: hsl(0 0% 6%);
+  --color-base-200: hsl(0 0% 10%);
+  --color-base-300: hsl(0 0% 14%);
+  --color-base-content: hsl(0 0% 95%);
+  
+  --color-primary: hsl(142 71% 45%);
+  --color-primary-content: hsl(0 0% 5%);
+  
+  --color-secondary: hsl(0 0% 14%);
+  --color-secondary-content: hsl(0 0% 80%);
+  
+  --color-accent: hsl(142 71% 45%);
+  --color-accent-content: hsl(0 0% 5%);
+  
+  --color-neutral: hsl(0 0% 14%);
+  --color-neutral-content: hsl(0 0% 55%);
+  
+  --color-info: hsl(142 71% 45%);
+  --color-success: hsl(142 71% 45%);
+  --color-warning: hsl(48 96% 53%);
+  --color-error: hsl(0 72% 51%);
+  
+  --radius-box: 0.75rem;
+  --radius-btn: 0.75rem;
+  --radius-badge: 0.75rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-base-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-base-300);
+  border-radius: 2px;
+}
+
+.font-display {
+  font-family: 'Bebas Neue', 'Inter', sans-serif;
+  letter-spacing: 0.05em;
+}
+
+.gym-glow {
+  box-shadow: 0 0 20px hsl(142 71% 45% / 0.3), 0 0 40px hsl(142 71% 45% / 0.1);
 }
