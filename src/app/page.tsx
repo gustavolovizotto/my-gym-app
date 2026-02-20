@@ -7,21 +7,84 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Zap, Calendar, Flame } from "lucide-react";
 
-const todayStats = [
-  { label: "Volume Total", value: "4.200", unit: "kg", icon: Zap },
-  { label: "Último Treino", value: "Ontem", unit: "", icon: Calendar },
-  { label: "Sequência", value: "5", unit: "dias", icon: Flame },
-];
-
 export default function Home() {
   const [session, setSession] = useState<any>(null);
+  const [userName, setUserName] = useState<string>("Atleta");
+  const [stats, setStats] = useState({ volume: 0, lastWorkout: "-", streak: 0 });
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
+    const fetchProfileAndStats = async (userId: string) => {
+      // Fetch Profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", userId)
+        .single();
+      
+      if (profile && profile.name) {
+        setUserName(profile.name);
+      }
+
+      // Fetch Workout Logs for Stats and Activity
+      const { data: logs } = await supabase
+        .from("workout_logs")
+        .select("*")
+        .eq("user_id", userId)
+        .order("timestamp", { ascending: false });
+
+      if (logs && logs.length > 0) {
+        // Calculate Total Volume
+        const totalVolume = logs.reduce((acc, log) => acc + (log.weight * log.reps), 0);
+        
+        // Calculate Last Workout Date
+        const lastDate = new Date(logs[0].timestamp);
+        const today = new Date();
+        const isToday = lastDate.toDateString() === today.toDateString();
+        const isYesterday = new Date(today.setDate(today.getDate() - 1)).toDateString() === lastDate.toDateString();
+        
+        let lastWorkoutStr = lastDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+        if (isToday) lastWorkoutStr = "Hoje";
+        else if (isYesterday) lastWorkoutStr = "Ontem";
+
+        setStats({
+          volume: totalVolume,
+          lastWorkout: lastWorkoutStr,
+          streak: 1, // Simplified streak calculation
+        });
+
+        // Group logs by workout_id for Recent Activity
+        const groupedLogs = logs.reduce((acc: any, log) => {
+          if (!acc[log.workout_id]) {
+            acc[log.workout_id] = {
+              id: log.workout_id,
+              date: new Date(log.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+              type: "Treino", // We could fetch the split name here, but for now just "Treino"
+              volume: 0,
+              sets: 0,
+              timestamp: log.timestamp
+            };
+          }
+          acc[log.workout_id].volume += (log.weight * log.reps);
+          acc[log.workout_id].sets += 1;
+          return acc;
+        }, {});
+
+        const activityArray = Object.values(groupedLogs)
+          .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 3);
+
+        setRecentActivity(activityArray);
+      }
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (!session) {
         router.push("/auth");
+      } else {
+        fetchProfileAndStats(session.user.id);
       }
     });
 
@@ -31,6 +94,8 @@ export default function Home() {
       setSession(session);
       if (!session) {
         router.push("/auth");
+      } else {
+        fetchProfileAndStats(session.user.id);
       }
     });
 
@@ -39,6 +104,12 @@ export default function Home() {
 
   if (!session) return null;
 
+  const todayStats = [
+    { label: "Volume Total", value: stats.volume.toLocaleString('pt-BR'), unit: "kg", icon: Zap },
+    { label: "Último Treino", value: stats.lastWorkout, unit: "", icon: Calendar },
+    { label: "Sequência", value: stats.streak.toString(), unit: "dias", icon: Flame },
+  ];
+
   return (
     <div className="px-4 pt-6 pb-4 animate-fade-in">
       {/* Header */}
@@ -46,7 +117,7 @@ export default function Home() {
         <div>
           <p className="text-neutral-content text-sm font-medium mb-1">Bom treino,</p>
           <h1 className="text-2xl font-extrabold tracking-tight text-base-content">
-            João Silva 👊
+            {userName} 👊
           </h1>
         </div>
         <SyncBadge />
@@ -88,22 +159,24 @@ export default function Home() {
           Atividade Recente
         </h3>
         <div className="bg-base-200 rounded-xl border border-base-300 divide-y divide-base-300">
-          {[
-            { date: "Ontem", type: "PPL — Push", volume: "3.800 kg", sets: 18 },
-            { date: "Ter, 18 Fev", type: "PPL — Pull", volume: "2.950 kg", sets: 15 },
-            { date: "Seg, 17 Fev", type: "PPL — Legs", volume: "5.200 kg", sets: 16 },
-          ].map((entry, i) => (
-            <div key={i} className="flex items-center justify-between px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-base-content">{entry.type}</p>
-                <p className="text-xs text-neutral-content">{entry.date}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-primary">{entry.volume}</p>
-                <p className="text-xs text-neutral-content">{entry.sets} séries</p>
-              </div>
+          {recentActivity.length === 0 ? (
+            <div className="p-4 text-center text-sm text-neutral-content">
+              Nenhum treino registrado ainda.
             </div>
-          ))}
+          ) : (
+            recentActivity.map((entry, i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-base-content">{entry.type}</p>
+                  <p className="text-xs text-neutral-content">{entry.date}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-primary">{entry.volume.toLocaleString('pt-BR')} kg</p>
+                  <p className="text-xs text-neutral-content">{entry.sets} séries</p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

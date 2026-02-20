@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { isSupported, permission, subscribeToPush } = usePushNotifications();
 
   useEffect(() => {
     const getUser = async () => {
@@ -65,6 +67,23 @@ export default function ProfilePage() {
               <span className="text-sm font-medium">Sincronização Offline</span>
               <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-md font-medium">Ativa</span>
             </div>
+            
+            {isSupported && (
+              <div className="flex justify-between items-center py-3 border-b border-base-300">
+                <span className="text-sm font-medium">Notificações Push</span>
+                {permission === "granted" ? (
+                  <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-md font-medium">Ativas</span>
+                ) : (
+                  <button 
+                    onClick={subscribeToPush}
+                    className="text-xs bg-warning/20 text-warning px-3 py-1.5 rounded-md font-medium hover:bg-warning/30 transition-colors"
+                  >
+                    Ativar Notificações
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="flex justify-between items-center py-3 border-b border-base-300">
               <span className="text-sm font-medium">Versão do App</span>
               <span className="text-xs text-neutral-content">1.0.0</span>

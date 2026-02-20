@@ -26,14 +26,19 @@ export function useWorkoutSync() {
         return;
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
       // Prepare data for Supabase (remove local id if it's auto-incremented, or keep if UUID)
       const { error } = await supabase.from("workout_logs").insert(
         pendingLogs.map((log) => ({
           workout_id: log.workout_id,
+          split_id: log.split_id,
           exercise_id: log.exercise_id,
           weight: log.weight,
           reps: log.reps,
           timestamp: log.timestamp,
+          user_id: session.user.id,
         }))
       );
 

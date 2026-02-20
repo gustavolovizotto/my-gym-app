@@ -16,6 +16,7 @@ export interface Workout {
 export interface WorkoutLog {
   id?: string; // Local ID can be auto-incremented or UUID
   workout_id: string;
+  split_id: string;
   exercise_id: string;
   weight: number;
   reps: number;
@@ -29,10 +30,10 @@ const db = new Dexie("FitnessEvolutionDB") as Dexie & {
   workout_logs: EntityTable<WorkoutLog, "id">;
 };
 
-db.version(1).stores({
+db.version(3).stores({
   exercises: "id, name, muscle_group",
   workouts: "id, user_id, type, created_at",
-  workout_logs: "++id, workout_id, exercise_id, is_synced, timestamp",
+  workout_logs: "++id, workout_id, split_id, exercise_id, is_synced, timestamp",
 });
 
 export { db };
