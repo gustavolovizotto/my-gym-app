@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/icon-192x192.png" alt="MY GYM Logo" width="120" height="120" />
+  <img src="public/MyGymAppLogo.svg" alt="MY GYM Logo" width="120" height="120" />
   <h1>🏋️‍♂️ MY GYM</h1>
   <p><strong>Seu treino, sem limites. O app de musculação definitivo com arquitetura Offline-First.</strong></p>
   
