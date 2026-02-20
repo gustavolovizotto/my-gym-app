@@ -4,12 +4,27 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Plus, Trash2, X, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/db";
 
 interface WorkoutDivision {
   id: string;
   name: string;
-  frequency: number;
+  frequency?: number;
 }
+
+interface PendingDivisionCreate {
+  localDivisionId: string;
+  name: string;
+  frequency: number;
+  user_id: string;
+  splits: {
+    localSplitId: string;
+    name: string;
+    order_index: number;
+  }[];
+}
+
+const PENDING_DIVISIONS_KEY = "pending_division_creates";
 
 export function WorkoutSelector() {
   const router = useRouter();
@@ -17,6 +32,7 @@ export function WorkoutSelector() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "warning" | "error" } | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -25,7 +41,111 @@ export function WorkoutSelector() {
   });
   const [splits, setSplits] = useState([{ name: "" }]);
 
+  const showToast = (message: string, type: "success" | "warning" | "error" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const readPendingDivisionCreates = (): PendingDivisionCreate[] => {
+    try {
+      const raw = localStorage.getItem(PENDING_DIVISIONS_KEY);
+      if (!raw) return [];
+      return JSON.parse(raw) as PendingDivisionCreate[];
+    } catch {
+      return [];
+    }
+  };
+
+  const writePendingDivisionCreates = (items: PendingDivisionCreate[]) => {
+    localStorage.setItem(PENDING_DIVISIONS_KEY, JSON.stringify(items));
+  };
+
+  const enqueuePendingDivisionCreate = (item: PendingDivisionCreate) => {
+    const current = readPendingDivisionCreates();
+    current.push(item);
+    writePendingDivisionCreates(current);
+  };
+
+  const syncPendingDivisionCreates = async () => {
+    if (!navigator.onLine) return;
+
+    const pending = readPendingDivisionCreates();
+    if (pending.length === 0) return;
+
+    const stillPending: PendingDivisionCreate[] = [];
+
+    for (const item of pending) {
+      try {
+        const { data: divisionData, error: divisionError } = await supabase
+          .from("workout_divisions")
+          .insert([
+            {
+              name: item.name,
+              frequency: item.frequency,
+              user_id: item.user_id,
+            },
+          ])
+          .select()
+          .single();
+
+        if (divisionError || !divisionData) {
+          stillPending.push(item);
+          continue;
+        }
+
+        const splitsToInsert = item.splits
+          .filter((split) => split.name.trim() !== "")
+          .map((split) => ({
+            division_id: divisionData.id,
+            name: split.name,
+            order_index: split.order_index,
+            user_id: item.user_id,
+          }));
+
+        if (splitsToInsert.length > 0) {
+          const { error: splitsError } = await supabase.from("workout_splits").insert(splitsToInsert);
+          if (splitsError) {
+            stillPending.push(item);
+            continue;
+          }
+        }
+
+        await db.transaction("rw", db.workout_divisions, db.workout_splits, async () => {
+          await db.workout_divisions.delete(item.localDivisionId);
+          for (const split of item.splits) {
+            await db.workout_splits.delete(split.localSplitId);
+          }
+        });
+      } catch {
+        stillPending.push(item);
+      }
+    }
+
+    writePendingDivisionCreates(stillPending);
+
+    if (stillPending.length === 0) {
+      showToast("Divisões offline sincronizadas com sucesso.", "success");
+    }
+
+    fetchDivisions();
+  };
+
   const fetchDivisions = async () => {
+    // 1) Offline-first: Dexie
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        const localDivisions = await db.workout_divisions.where("user_id").equals(session.user.id).toArray();
+        if (localDivisions.length > 0) {
+          setDivisions(localDivisions as WorkoutDivision[]);
+          setLoading(false);
+        }
+      }
+    } catch {
+      // noop
+    }
+
+    // 2) Online source of truth
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
@@ -37,6 +157,17 @@ export function WorkoutSelector() {
 
     if (data) {
       setDivisions(data);
+
+      await db.transaction("rw", db.workout_divisions, async () => {
+        for (const division of data) {
+          await db.workout_divisions.put({
+            id: division.id,
+            user_id: session.user.id,
+            name: division.name,
+            created_at: new Date().toISOString(),
+          });
+        }
+      });
     } else {
       console.error("Erro ao buscar divisões:", error);
     }
@@ -45,6 +176,15 @@ export function WorkoutSelector() {
 
   useEffect(() => {
     fetchDivisions();
+
+    syncPendingDivisionCreates();
+
+    const onOnline = () => {
+      syncPendingDivisionCreates();
+    };
+
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
   }, []);
 
   const handleSelect = (id: string) => {
@@ -70,7 +210,72 @@ export function WorkoutSelector() {
     setIsSubmitting(true);
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) {
+      setIsSubmitting(false);
+      showToast("Faça login para criar divisões.", "error");
+      return;
+    }
+
+    const normalizedSplits = splits
+      .filter(s => s.name.trim() !== "")
+      .map((split, index) => ({
+        name: split.name,
+        order_index: index + 1,
+      }));
+
+    // Fluxo offline: salva no Dexie e enfileira para sincronização
+    if (!navigator.onLine) {
+      const localDivisionId = `local-division-${crypto.randomUUID()}`;
+      const nowIso = new Date().toISOString();
+      const localSplits = normalizedSplits.map((split) => ({
+        localSplitId: `local-split-${crypto.randomUUID()}`,
+        name: split.name,
+        order_index: split.order_index,
+      }));
+
+      try {
+        await db.transaction("rw", db.workout_divisions, db.workout_splits, async () => {
+          await db.workout_divisions.put({
+            id: localDivisionId,
+            user_id: session.user.id,
+            name: formData.name,
+            frequency: formData.frequency,
+            created_at: nowIso,
+          });
+
+          for (const split of localSplits) {
+            await db.workout_splits.put({
+              id: split.localSplitId,
+              division_id: localDivisionId,
+              name: split.name,
+              order_index: split.order_index,
+              created_at: nowIso,
+            });
+          }
+        });
+
+        enqueuePendingDivisionCreate({
+          localDivisionId,
+          name: formData.name,
+          frequency: formData.frequency,
+          user_id: session.user.id,
+          splits: localSplits,
+        });
+
+        setIsModalOpen(false);
+        setFormData({ name: "", frequency: 3 });
+        setSplits([{ name: "" }]);
+        setLoading(true);
+        fetchDivisions();
+        showToast("Divisão criada offline. Será sincronizada quando voltar a internet.", "warning");
+      } catch (error) {
+        console.error("Erro ao salvar divisão offline:", error);
+        showToast("Não foi possível salvar offline.", "error");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     // 1. Criar a Divisão
     const { data: divisionData, error: divisionError } = await supabase
@@ -118,6 +323,7 @@ export function WorkoutSelector() {
     setLoading(true);
     fetchDivisions();
     setIsSubmitting(false);
+    showToast("Divisão criada com sucesso.", "success");
   };
 
   if (loading) {
@@ -152,7 +358,7 @@ export function WorkoutSelector() {
                   </span>
                 </div>
                 <p className="text-xs text-neutral-content mt-0.5">
-                  Frequência: {division.frequency}x na semana
+                  Frequência: {division.frequency ?? "-"}x na semana
                 </p>
               </div>
             </div>
@@ -266,6 +472,22 @@ export function WorkoutSelector() {
             <button onClick={() => setIsModalOpen(false)}>close</button>
           </form>
         </dialog>
+      )}
+
+      {toast && (
+        <div className="toast toast-top toast-center z-70">
+          <div
+            className={`alert shadow-lg ${
+              toast.type === "success"
+                ? "alert-success"
+                : toast.type === "warning"
+                  ? "alert-warning"
+                  : "alert-error"
+            }`}
+          >
+            <span>{toast.message}</span>
+          </div>
+        </div>
       )}
     </div>
   );

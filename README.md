@@ -102,7 +102,13 @@ O projeto foi construído com o que há de mais moderno no ecossistema React:
    ```
    Acesse `http://localhost:3000` no seu navegador.
 
-> **Nota sobre o modo Offline:** O Service Worker (Serwist) está configurado para rodar no modo de desenvolvimento para facilitar os testes offline. Para testar, abra o app, vá na aba *Network* do DevTools e mude para *Offline*.
+> **Modo Offline (recomendado):**
+> 1. Rode em produção local com build automático:
+>    ```bash
+>    yarn start:offline
+>    ```
+> 2. Abra o app **com internet** na primeira execução para aquecer o cache.
+> 3. Depois, você pode testar em *Offline* no DevTools (*Network → Offline*).
 
 ---
 
