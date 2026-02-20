@@ -1,16 +1,27 @@
 import Dexie, { type EntityTable } from "dexie";
 
+export interface WorkoutDivision {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface WorkoutSplit {
+  id: string;
+  division_id: string;
+  name: string;
+  order_index: number;
+  created_at: string;
+}
+
 export interface Exercise {
   id: string;
   name: string;
   muscle_group: string;
-}
-
-export interface Workout {
-  id: string;
-  user_id: string;
-  type: "PPL" | "PPL+UP" | "UP" | "ABC";
-  created_at: string;
+  split_id: string;
+  rest_time: number;
+  target_sets: number;
 }
 
 export interface WorkoutLog {
@@ -25,14 +36,16 @@ export interface WorkoutLog {
 }
 
 const db = new Dexie("FitnessEvolutionDB") as Dexie & {
+  workout_divisions: EntityTable<WorkoutDivision, "id">;
+  workout_splits: EntityTable<WorkoutSplit, "id">;
   exercises: EntityTable<Exercise, "id">;
-  workouts: EntityTable<Workout, "id">;
   workout_logs: EntityTable<WorkoutLog, "id">;
 };
 
-db.version(3).stores({
-  exercises: "id, name, muscle_group",
-  workouts: "id, user_id, type, created_at",
+db.version(4).stores({
+  workout_divisions: "id, user_id, name, created_at",
+  workout_splits: "id, division_id, name, order_index, created_at",
+  exercises: "id, name, muscle_group, split_id",
   workout_logs: "++id, workout_id, split_id, exercise_id, is_synced, timestamp",
 });
 

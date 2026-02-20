@@ -5,11 +5,13 @@ import { cookies } from "next/headers";
 
 // Configuração do Web Push
 // O email deve ser um contato válido para que os provedores de push possam contatar em caso de problemas
-webpush.setVapidDetails(
-  "mailto:contato@fitevo.com", 
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    "mailto:contato@fitevo.com", 
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 export async function POST(request: Request) {
   try {

@@ -28,30 +28,79 @@ function TodayWorkoutSelection() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      // Fetch divisions with their splits
-      const { data, error } = await supabase
-        .from("workout_divisions")
-        .select(`
-          id,
-          name,
-          workout_splits (
+      // 1. Tentar carregar do Dexie primeiro (Offline-first)
+      try {
+        const localDivisions = await db.workout_divisions.where("user_id").equals(session.user.id).toArray();
+        const localSplits = await db.workout_splits.toArray();
+        
+        if (localDivisions.length > 0) {
+          const sortedData = localDivisions.map(div => ({
+            ...div,
+            workout_splits: localSplits
+              .filter(split => split.division_id === div.id)
+              .sort((a, b) => a.order_index - b.order_index)
+          })).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          
+          setDivisions(sortedData);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar do Dexie:", err);
+      }
+
+      // 2. Buscar do Supabase em background e atualizar Dexie
+      try {
+        const { data, error } = await supabase
+          .from("workout_divisions")
+          .select(`
             id,
             name,
-            order_index
-          )
-        `)
-        .eq("user_id", session.user.id)
-        .order("created_at");
+            created_at,
+            workout_splits (
+              id,
+              name,
+              order_index,
+              created_at
+            )
+          `)
+          .eq("user_id", session.user.id)
+          .order("created_at");
 
-      if (data) {
-        // Sort splits by order_index
-        const sortedData = data.map(div => ({
-          ...div,
-          workout_splits: div.workout_splits.sort((a: any, b: any) => a.order_index - b.order_index)
-        }));
-        setDivisions(sortedData);
+        if (data) {
+          // Atualizar Dexie
+          await db.transaction('rw', db.workout_divisions, db.workout_splits, async () => {
+            for (const div of data) {
+              await db.workout_divisions.put({
+                id: div.id,
+                user_id: session.user.id,
+                name: div.name,
+                created_at: div.created_at
+              });
+              
+              for (const split of div.workout_splits) {
+                await db.workout_splits.put({
+                  id: split.id,
+                  division_id: div.id,
+                  name: split.name,
+                  order_index: split.order_index,
+                  created_at: split.created_at
+                });
+              }
+            }
+          });
+
+          // Sort splits by order_index
+          const sortedData = data.map(div => ({
+            ...div,
+            workout_splits: div.workout_splits.sort((a: any, b: any) => a.order_index - b.order_index)
+          }));
+          setDivisions(sortedData);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar do Supabase (offline?):", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchDivisionsAndSplits();
@@ -142,30 +191,66 @@ function WorkoutContent() {
     
     setLoading(true);
     
-    // Fetch Split Name and Division ID for back button
-    const { data: splitData } = await supabase
-      .from("workout_splits")
-      .select("name, division_id")
-      .eq("id", splitId)
-      .single();
+    // 1. Tentar carregar do Dexie primeiro (Offline-first)
+    try {
+      const localSplit = await db.workout_splits.get(splitId);
+      if (localSplit) {
+        setSplitName(localSplit.name);
+        setDivisionId(localSplit.division_id);
+      }
 
-    if (splitData) {
-      setSplitName(splitData.name);
-      setDivisionId(splitData.division_id);
+      const localExercises = await db.exercises.where("split_id").equals(splitId).toArray();
+      if (localExercises.length > 0) {
+        setExercises(localExercises);
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar exercícios do Dexie:", err);
     }
 
-    // Fetch exercises from Supabase that match the split
-    const { data, error } = await supabase
-      .from("exercises")
-      .select("*")
-      .eq("split_id", splitId);
+    // 2. Buscar do Supabase em background e atualizar Dexie
+    try {
+      // Fetch Split Name and Division ID for back button
+      const { data: splitData } = await supabase
+        .from("workout_splits")
+        .select("name, division_id")
+        .eq("id", splitId)
+        .single();
 
-    if (data) {
-      setExercises(data);
-    } else {
-      console.error("Error fetching exercises:", error);
+      if (splitData) {
+        setSplitName(splitData.name);
+        setDivisionId(splitData.division_id);
+      }
+
+      // Fetch exercises from Supabase that match the split
+      const { data, error } = await supabase
+        .from("exercises")
+        .select("*")
+        .eq("split_id", splitId);
+
+      if (data) {
+        // Atualizar Dexie
+        await db.transaction('rw', db.exercises, async () => {
+          for (const ex of data) {
+            await db.exercises.put({
+              id: ex.id,
+              name: ex.name,
+              muscle_group: ex.muscle_group,
+              split_id: ex.split_id,
+              rest_time: ex.rest_time,
+              target_sets: ex.target_sets
+            });
+          }
+        });
+        setExercises(data);
+      } else {
+        console.error("Error fetching exercises:", error);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar exercícios do Supabase (offline?):", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {

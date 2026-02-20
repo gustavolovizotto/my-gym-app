@@ -68,7 +68,7 @@ self.addEventListener("message", (event) => {
         badge: "/icon-192x192.png",
         vibrate: [300, 100, 300, 100, 300],
         data: { url: "/workout" },
-      });
+      } as any);
     }, delay);
   }
 });
