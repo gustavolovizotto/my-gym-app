@@ -70,17 +70,17 @@ export default function HistoryPage() {
             };
           }
 
-          const session = acc[log.workout_id];
-          session.total_volume += log.weight * log.reps;
+          const sessionObj = acc[log.workout_id];
+          sessionObj.total_volume += log.weight * log.reps;
 
-          if (!session.exercises[log.exercise_id]) {
-            session.exercises[log.exercise_id] = {
+          if (!sessionObj.exercises[log.exercise_id]) {
+            sessionObj.exercises[log.exercise_id] = {
               name: log.exercises?.name || `Exercício ID: ${log.exercise_id}`,
               sets: []
             };
           }
 
-          session.exercises[log.exercise_id].sets.push({
+          sessionObj.exercises[log.exercise_id].sets.push({
             weight: log.weight,
             reps: log.reps,
             timestamp: log.timestamp
@@ -93,8 +93,8 @@ export default function HistoryPage() {
         const sortedSessions = Object.values(grouped).sort((a, b) => b.timestamp - a.timestamp);
         
         // Sort sets by timestamp ascending within each exercise
-        sortedSessions.forEach(session => {
-          Object.values(session.exercises).forEach(exercise => {
+        sortedSessions.forEach(sessionObj => {
+          Object.values(sessionObj.exercises).forEach(exercise => {
             exercise.sets.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
           });
         });

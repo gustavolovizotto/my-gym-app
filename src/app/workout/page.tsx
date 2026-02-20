@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { SyncBadge } from "@/components/SyncBadge";
 import { ExerciseCard } from "@/components/ExerciseCard";
-import { ArrowLeft, Plus, ChevronRight } from "lucide-react";
+import { ArrowLeft, Plus, ChevronRight, Trash2, X, Dumbbell } from "lucide-react";
 import { Suspense, useMemo, useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
@@ -59,12 +59,15 @@ function TodayWorkoutSelection() {
             workout_splits (
               id,
               name,
-              order_index,
-              created_at
+              order_index
             )
           `)
           .eq("user_id", session.user.id)
           .order("created_at");
+
+        if (error) {
+          console.error("Erro do Supabase:", error);
+        }
 
         if (data) {
           // Atualizar Dexie
@@ -83,7 +86,7 @@ function TodayWorkoutSelection() {
                   division_id: div.id,
                   name: split.name,
                   order_index: split.order_index,
-                  created_at: split.created_at
+                  created_at: new Date().toISOString() // Fallback since it's not in the DB
                 });
               }
             }
@@ -105,6 +108,34 @@ function TodayWorkoutSelection() {
 
     fetchDivisionsAndSplits();
   }, []);
+
+  const handleDeleteDivision = async (divisionId: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta divisão e todos os seus treinos?")) return;
+
+    // 1. Deletar do Supabase
+    const { error } = await supabase
+      .from("workout_divisions")
+      .delete()
+      .eq("id", divisionId);
+
+    if (error) {
+      console.error("Erro ao deletar divisão:", error);
+      alert("Erro ao deletar divisão.");
+      return;
+    }
+
+    // 2. Deletar do Dexie (Local)
+    await db.transaction('rw', db.workout_divisions, db.workout_splits, async () => {
+      await db.workout_divisions.delete(divisionId);
+      const splitsToDelete = await db.workout_splits.where("division_id").equals(divisionId).toArray();
+      for (const split of splitsToDelete) {
+        await db.workout_splits.delete(split.id);
+      }
+    });
+
+    // 3. Atualizar estado local
+    setDivisions(prev => prev.filter(div => div.id !== divisionId));
+  };
 
   if (loading) {
     return (
@@ -130,9 +161,18 @@ function TodayWorkoutSelection() {
         ) : (
           divisions.map((division) => (
             <div key={division.id} className="flex flex-col gap-3">
-              <h2 className="font-display text-xl text-base-content/80 px-2">
-                {division.name}
-              </h2>
+              <div className="flex items-center justify-between px-2">
+                <h2 className="font-display text-xl text-base-content/80">
+                  {division.name}
+                </h2>
+                <button 
+                  onClick={() => handleDeleteDivision(division.id)}
+                  className="btn btn-ghost btn-sm btn-circle text-error"
+                  title="Excluir Divisão"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
               <div className="flex flex-col gap-2">
                 {division.workout_splits.map((split: any) => (
                   <button
@@ -367,28 +407,86 @@ function WorkoutContent() {
       {/* Modal de Criação de Exercício */}
       {isModalOpen && (
         <dialog className="modal modal-open modal-bottom sm:modal-middle">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Adicionar Exercício</h3>
-            <form onSubmit={handleAddExercise} className="flex flex-col gap-4">
-              <div className="form-control">
-                <label className="label"><span className="label-text">Nome do Exercício</span></label>
-                <input required type="text" className="input input-bordered" value={newExerciseName} onChange={e => setNewExerciseName(e.target.value)} />
+          <div className="modal-box max-w-lg rounded-2xl border border-base-300 bg-base-200 p-0 overflow-hidden shadow-2xl">
+            <div className="px-5 py-4 border-b border-base-300 bg-linear-to-r from-primary/10 to-transparent">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center">
+                    <Dumbbell className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-xl text-base-content leading-none">Adicionar Exercício</h3>
+                    <p className="text-xs text-neutral-content mt-1">Crie um novo exercício para este treino</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-circle btn-sm"
+                  onClick={() => setIsModalOpen(false)}
+                  aria-label="Fechar modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <div className="form-control">
-                <label className="label"><span className="label-text">Grupo Muscular (Opcional)</span></label>
-                <input type="text" className="input input-bordered" value={newExerciseMuscle} onChange={e => setNewExerciseMuscle(e.target.value)} />
+            </div>
+
+            <form onSubmit={handleAddExercise} className="p-5 flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Nome do Exercício</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ex: Supino reto"
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  value={newExerciseName}
+                  onChange={e => setNewExerciseName(e.target.value)}
+                />
               </div>
-              <div className="form-control">
-                <label className="label"><span className="label-text">Tempo de Descanso (segundos)</span></label>
-                <input required type="number" min="0" step="15" className="input input-bordered" value={newExerciseRestTime} onChange={e => setNewExerciseRestTime(parseInt(e.target.value))} />
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Grupo Muscular (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Peito"
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  value={newExerciseMuscle}
+                  onChange={e => setNewExerciseMuscle(e.target.value)}
+                />
               </div>
-              <div className="form-control">
-                <label className="label"><span className="label-text">Séries Alvo</span></label>
-                <input required type="number" min="1" className="input input-bordered" value={newExerciseTargetSets} onChange={e => setNewExerciseTargetSets(parseInt(e.target.value))} />
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Descanso (s)</label>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    step="15"
+                    className="w-full bg-base-300 border border-base-300 text-base-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                    value={newExerciseRestTime}
+                    onChange={e => setNewExerciseRestTime(parseInt(e.target.value))}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Séries alvo</label>
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    className="w-full bg-base-300 border border-base-300 text-base-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                    value={newExerciseTargetSets}
+                    onChange={e => setNewExerciseTargetSets(parseInt(e.target.value))}
+                  />
+                </div>
               </div>
-              <div className="modal-action mt-6">
-                <button type="button" className="btn" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary">Adicionar</button>
+
+              <div className="modal-action mt-2">
+                <button type="button" className="btn btn-ghost rounded-xl" onClick={() => setIsModalOpen(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary rounded-xl px-6">
+                  Adicionar
+                </button>
               </div>
             </form>
           </div>
