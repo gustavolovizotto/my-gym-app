@@ -18,6 +18,15 @@ export const metadata: Metadata = {
   title: "MY GYM",
   description: "App de musculação focado em progressão de carga",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon.png', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png' },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
