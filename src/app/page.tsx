@@ -2,6 +2,7 @@
 
 import { SyncBadge } from "@/components/SyncBadge";
 import { WorkoutSelector } from "@/components/WorkoutSelector";
+import { XPBar } from "@/components/XPBar";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -10,21 +11,23 @@ import { Zap, Calendar, Flame } from "lucide-react";
 export default function Home() {
   const [session, setSession] = useState<any>(null);
   const [userName, setUserName] = useState<string>("Atleta");
+  const [xp, setXP] = useState(0);
   const [stats, setStats] = useState({ volume: 0, lastWorkout: "-", streak: 0 });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     const fetchProfileAndStats = async (userId: string) => {
-      // Fetch Profile
+      // Fetch Profile (now includes xp and streak)
       const { data: profile } = await supabase
         .from("profiles")
-        .select("name")
+        .select("name, xp, streak")
         .eq("id", userId)
         .single();
-      
-      if (profile && profile.name) {
-        setUserName(profile.name);
+
+      if (profile) {
+        if (profile.name) setUserName(profile.name);
+        setXP(profile.xp ?? 0);
       }
 
       // Fetch Workout Logs for Stats and Activity
@@ -35,15 +38,13 @@ export default function Home() {
         .order("timestamp", { ascending: false });
 
       if (logs && logs.length > 0) {
-        // Calculate Total Volume
         const totalVolume = logs.reduce((acc, log) => acc + (log.weight * log.reps), 0);
-        
-        // Calculate Last Workout Date
+
         const lastDate = new Date(logs[0].timestamp);
         const today = new Date();
         const isToday = lastDate.toDateString() === today.toDateString();
         const isYesterday = new Date(today.setDate(today.getDate() - 1)).toDateString() === lastDate.toDateString();
-        
+
         let lastWorkoutStr = lastDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
         if (isToday) lastWorkoutStr = "Hoje";
         else if (isYesterday) lastWorkoutStr = "Ontem";
@@ -51,16 +52,15 @@ export default function Home() {
         setStats({
           volume: totalVolume,
           lastWorkout: lastWorkoutStr,
-          streak: 1, // Simplified streak calculation
+          streak: profile?.streak ?? 0,
         });
 
-        // Group logs by workout_id for Recent Activity
         const groupedLogs = logs.reduce((acc: any, log) => {
           if (!acc[log.workout_id]) {
             acc[log.workout_id] = {
               id: log.workout_id,
               date: new Date(log.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
-              type: "Treino", // We could fetch the split name here, but for now just "Treino"
+              type: "Treino",
               volume: 0,
               sets: 0,
               timestamp: log.timestamp
@@ -76,6 +76,8 @@ export default function Home() {
           .slice(0, 3);
 
         setRecentActivity(activityArray);
+      } else {
+        setStats((s) => ({ ...s, streak: profile?.streak ?? 0 }));
       }
     };
 
@@ -113,7 +115,7 @@ export default function Home() {
   return (
     <div className="px-4 pt-6 pb-24 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-4">
         <div>
           <p className="text-neutral-content text-sm font-medium mb-1">Bom treino,</p>
           <h1 className="text-2xl font-extrabold tracking-tight text-base-content">
@@ -121,6 +123,11 @@ export default function Home() {
           </h1>
         </div>
         <SyncBadge />
+      </div>
+
+      {/* XP Bar */}
+      <div className="mb-6">
+        <XPBar xp={xp} compact />
       </div>
 
       {/* Today's Stats */}

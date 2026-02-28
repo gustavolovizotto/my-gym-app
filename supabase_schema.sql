@@ -56,7 +56,7 @@ CREATE POLICY "Usuários gerenciam seus próprios logs" ON public.workout_logs F
 -- ==========================================
 -- MIGRATIONS / ATUALIZAÇÕES
 -- ==========================================
--- Se você já havia criado a tabela `exercises` antes, rode os comandos abaixo 
+-- Se você já havia criado a tabela `exercises` antes, rode os comandos abaixo
 -- no SQL Editor do Supabase para adicionar as novas colunas sem perder os dados:
 
 -- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS rest_time INTEGER DEFAULT 90;
@@ -64,3 +64,38 @@ CREATE POLICY "Usuários gerenciam seus próprios logs" ON public.workout_logs F
 -- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS rep_range TEXT;
 -- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS description TEXT;
 -- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS video_url TEXT;
+
+-- ==========================================
+-- MIGRATION: Sistema de XP + Streak + Conquistas
+-- ==========================================
+-- Rode no SQL Editor do Supabase:
+
+-- 5. Tabela de Perfis (Profiles) com XP e Streak
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  name TEXT,
+  xp INTEGER DEFAULT 0,
+  streak INTEGER DEFAULT 0,
+  last_workout_date DATE
+);
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Perfil próprio" ON public.profiles FOR ALL TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- Se a tabela profiles já existia, adicione as colunas:
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS xp INTEGER DEFAULT 0;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS streak INTEGER DEFAULT 0;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_workout_date DATE;
+
+-- 6. Tabela de Conquistas (Achievements)
+CREATE TABLE IF NOT EXISTS public.achievements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  achievement_key TEXT NOT NULL,
+  unlocked_at TIMESTAMPTZ DEFAULT now(),
+  seen BOOLEAN DEFAULT false,
+  UNIQUE(user_id, achievement_key)
+);
+
+ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Conquistas próprias" ON public.achievements FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);

@@ -3,8 +3,10 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { SyncBadge } from "@/components/SyncBadge";
 import { ExerciseCard } from "@/components/ExerciseCard";
+import { WorkoutCompleteModal } from "@/components/WorkoutCompleteModal";
 import { ArrowLeft, Plus, ChevronRight, Trash2, X, Dumbbell } from "lucide-react";
 import { Suspense, useMemo, useEffect, useState } from "react";
+import { useXP, CompleteWorkoutResult } from "@/hooks/useXP";
 import {
   DndContext,
   PointerSensor,
@@ -308,6 +310,10 @@ function WorkoutContent() {
   const [editDescription, setEditDescription] = useState("");
   const [editVideoUrl, setEditVideoUrl] = useState("");
 
+  const { completeWorkout } = useXP();
+  const [completeResult, setCompleteResult] = useState<CompleteWorkoutResult | null>(null);
+  const [finishing, setFinishing] = useState(false);
+
   const workoutId = useMemo(() => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID();
@@ -547,10 +553,32 @@ function WorkoutContent() {
       </div>
 
       <div className="mt-8 mb-4">
-        <button onClick={() => router.push("/")} className="btn btn-primary w-full rounded-xl font-display text-xl tracking-wide h-14">
-          Finalizar Treino
+        <button
+          onClick={async () => {
+            if (finishing) return;
+            setFinishing(true);
+            const result = await completeWorkout(logs?.length ?? 0, currentVolume);
+            setFinishing(false);
+            if (result) {
+              setCompleteResult(result);
+            } else {
+              router.push("/");
+            }
+          }}
+          disabled={finishing}
+          className="btn btn-primary w-full rounded-xl font-display text-xl tracking-wide h-14"
+        >
+          {finishing ? <span className="loading loading-spinner loading-sm" /> : "Finalizar Treino"}
         </button>
       </div>
+
+      {completeResult && (
+        <WorkoutCompleteModal
+          result={completeResult}
+          numSets={logs?.length ?? 0}
+          sessionVolume={currentVolume}
+        />
+      )}
 
       {/* Modal de Edição de Exercício */}
       {editingExercise && (
