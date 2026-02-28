@@ -5,6 +5,21 @@ import { SyncBadge } from "@/components/SyncBadge";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { ArrowLeft, Plus, ChevronRight, Trash2, X, Dumbbell } from "lucide-react";
 import { Suspense, useMemo, useEffect, useState } from "react";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  closestCenter,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
@@ -18,6 +33,59 @@ interface Exercise {
   target_sets: number;
   rep_range?: string;
   description?: string;
+  video_url?: string;
+}
+
+function SortableExerciseCard({
+  exercise,
+  workoutId,
+  splitId,
+  onDeleted,
+  onEdit,
+}: {
+  exercise: Exercise;
+  workoutId: string;
+  splitId: string;
+  onDeleted: () => void;
+  onEdit: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: exercise.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    position: "relative" as const,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <ExerciseCard
+        exerciseId={exercise.id}
+        name={exercise.name}
+        muscleGroup={exercise.muscle_group}
+        workoutId={workoutId}
+        splitId={splitId}
+        restTime={exercise.rest_time || 90}
+        targetSets={exercise.target_sets || 3}
+        repRange={exercise.rep_range}
+        description={exercise.description}
+        videoUrl={exercise.video_url}
+        onDeleted={onDeleted}
+        onEdit={onEdit}
+        dragHandleListeners={listeners as Record<string, (...args: unknown[]) => void>}
+        dragHandleAttributes={attributes}
+      />
+    </div>
+  );
 }
 
 function TodayWorkoutSelection() {
@@ -207,6 +275,20 @@ function WorkoutContent() {
   const [splitName, setSplitName] = useState("");
   const [divisionId, setDivisionId] = useState("");
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setExercises((prev) => {
+        const oldIndex = prev.findIndex((e) => e.id === active.id);
+        const newIndex = prev.findIndex((e) => e.id === over.id);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState("");
@@ -215,6 +297,16 @@ function WorkoutContent() {
   const [newExerciseTargetSets, setNewExerciseTargetSets] = useState(3);
   const [newExerciseRepRange, setNewExerciseRepRange] = useState("");
   const [newExerciseDescription, setNewExerciseDescription] = useState("");
+  const [newExerciseVideoUrl, setNewExerciseVideoUrl] = useState("");
+
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editMuscle, setEditMuscle] = useState("");
+  const [editRestTime, setEditRestTime] = useState(90);
+  const [editTargetSets, setEditTargetSets] = useState(3);
+  const [editRepRange, setEditRepRange] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editVideoUrl, setEditVideoUrl] = useState("");
 
   const workoutId = useMemo(() => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -285,6 +377,7 @@ function WorkoutContent() {
               target_sets: ex.target_sets,
               rep_range: ex.rep_range ?? undefined,
               description: ex.description ?? undefined,
+              video_url: ex.video_url ?? undefined,
             });
           }
         });
@@ -319,6 +412,7 @@ function WorkoutContent() {
         target_sets: newExerciseTargetSets,
         rep_range: newExerciseRepRange || null,
         description: newExerciseDescription || null,
+        video_url: newExerciseVideoUrl || null,
         user_id: session.user.id,
       }
     ]);
@@ -331,9 +425,43 @@ function WorkoutContent() {
       setNewExerciseTargetSets(3);
       setNewExerciseRepRange("");
       setNewExerciseDescription("");
+      setNewExerciseVideoUrl("");
       fetchExercises();
     } else {
       console.error("Erro ao adicionar exercício:", error);
+    }
+  };
+
+  const openEditModal = (ex: Exercise) => {
+    setEditingExercise(ex);
+    setEditName(ex.name);
+    setEditMuscle(ex.muscle_group);
+    setEditRestTime(ex.rest_time);
+    setEditTargetSets(ex.target_sets);
+    setEditRepRange(ex.rep_range ?? "");
+    setEditDescription(ex.description ?? "");
+    setEditVideoUrl(ex.video_url ?? "");
+  };
+
+  const handleEditExercise = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingExercise) return;
+
+    const { error } = await supabase.from("exercises").update({
+      name: editName,
+      muscle_group: editMuscle,
+      rest_time: editRestTime,
+      target_sets: editTargetSets,
+      rep_range: editRepRange || null,
+      description: editDescription || null,
+      video_url: editVideoUrl || null,
+    }).eq("id", editingExercise.id);
+
+    if (!error) {
+      setEditingExercise(null);
+      fetchExercises();
+    } else {
+      console.error("Erro ao editar exercício:", error);
     }
   };
 
@@ -384,21 +512,29 @@ function WorkoutContent() {
             <p className="text-sm text-neutral-content">Nenhum exercício encontrado para este treino.</p>
           </div>
         ) : (
-          exercises.map((ex) => (
-            <ExerciseCard
-              key={ex.id}
-              exerciseId={ex.id}
-              name={ex.name}
-              muscleGroup={ex.muscle_group}
-              workoutId={workoutId}
-              splitId={splitId}
-              restTime={ex.rest_time || 90}
-              targetSets={ex.target_sets || 3}
-              repRange={ex.rep_range}
-              description={ex.description}
-              onDeleted={fetchExercises}
-            />
-          ))
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={exercises.map((e) => e.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="flex flex-col gap-4">
+                {exercises.map((ex) => (
+                  <SortableExerciseCard
+                    key={ex.id}
+                    exercise={ex}
+                    workoutId={workoutId}
+                    splitId={splitId}
+                    onDeleted={fetchExercises}
+                    onEdit={() => openEditModal(ex)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
 
         <button
@@ -415,6 +551,129 @@ function WorkoutContent() {
           Finalizar Treino
         </button>
       </div>
+
+      {/* Modal de Edição de Exercício */}
+      {editingExercise && (
+        <dialog className="modal modal-open modal-bottom sm:modal-middle">
+          <div className="modal-box max-w-lg rounded-2xl border border-base-300 bg-base-200 p-0 overflow-hidden shadow-2xl">
+            <div className="px-5 py-4 border-b border-base-300 bg-linear-to-r from-primary/10 to-transparent">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center">
+                    <Dumbbell className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-xl text-base-content leading-none">Editar Exercício</h3>
+                    <p className="text-xs text-neutral-content mt-1">{editingExercise.name}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-circle btn-sm"
+                  onClick={() => setEditingExercise(null)}
+                  aria-label="Fechar modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleEditExercise} className="p-5 flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Nome do Exercício</label>
+                <input
+                  required
+                  type="text"
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Grupo Muscular (Opcional)</label>
+                <input
+                  type="text"
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  value={editMuscle}
+                  onChange={e => setEditMuscle(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Descanso (s)</label>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    step="15"
+                    className="w-full bg-base-300 border border-base-300 text-base-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                    value={editRestTime}
+                    onChange={e => setEditRestTime(parseInt(e.target.value))}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Séries alvo</label>
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    className="w-full bg-base-300 border border-base-300 text-base-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                    value={editTargetSets}
+                    onChange={e => setEditTargetSets(parseInt(e.target.value))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Repetições (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 8-12"
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  value={editRepRange}
+                  onChange={e => setEditRepRange(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Descrição (Opcional)</label>
+                <textarea
+                  rows={3}
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none"
+                  value={editDescription}
+                  onChange={e => setEditDescription(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Vídeo / GIF (Opcional)</label>
+                <input
+                  type="url"
+                  placeholder="Ex: https://youtube.com/watch?v=..."
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  value={editVideoUrl}
+                  onChange={e => setEditVideoUrl(e.target.value)}
+                />
+                <p className="text-[10px] text-neutral-content">Suporta YouTube, Shorts, links de vídeo (.mp4) e GIFs</p>
+              </div>
+
+              <div className="modal-action mt-2">
+                <button type="button" className="btn btn-ghost rounded-xl" onClick={() => setEditingExercise(null)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary rounded-xl px-6">
+                  Salvar
+                </button>
+              </div>
+            </form>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button onClick={() => setEditingExercise(null)}>close</button>
+          </form>
+        </dialog>
+      )}
 
       {/* Modal de Criação de Exercício */}
       {isModalOpen && (
@@ -512,6 +771,18 @@ function WorkoutContent() {
                   value={newExerciseDescription}
                   onChange={e => setNewExerciseDescription(e.target.value)}
                 />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Vídeo / GIF (Opcional)</label>
+                <input
+                  type="url"
+                  placeholder="Ex: https://youtube.com/watch?v=..."
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  value={newExerciseVideoUrl}
+                  onChange={e => setNewExerciseVideoUrl(e.target.value)}
+                />
+                <p className="text-[10px] text-neutral-content">Suporta YouTube, Shorts, links de vídeo (.mp4) e GIFs</p>
               </div>
 
               <div className="modal-action mt-2">

@@ -63,3 +63,4 @@ CREATE POLICY "Usuários gerenciam seus próprios logs" ON public.workout_logs F
 -- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS target_sets INTEGER DEFAULT 3;
 -- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS rep_range TEXT;
 -- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS description TEXT;
+-- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS video_url TEXT;
