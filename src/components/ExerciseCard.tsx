@@ -18,10 +18,12 @@ interface ExerciseCardProps {
   splitId: string;
   restTime: number;
   targetSets: number;
+  repRange?: string;
+  description?: string;
   onDeleted?: () => void;
 }
 
-export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId, restTime, targetSets, onDeleted }: ExerciseCardProps) {
+export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId, restTime, targetSets, repRange, description, onDeleted }: ExerciseCardProps) {
   const [saved, setSaved] = useState(false);
   const { scheduleLocalRestTimer } = usePushNotifications();
 
@@ -84,6 +86,12 @@ export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId
         <div className="flex-1">
           <h3 className="font-display text-xl text-base-content tracking-wide">{name}</h3>
           <p className="text-xs text-neutral-content font-medium">{muscleGroup}</p>
+          {repRange && (
+            <p className="text-xs text-primary font-semibold mt-0.5">{repRange} reps</p>
+          )}
+          {description && (
+            <p className="text-xs text-neutral-content/70 mt-1 leading-snug">{description}</p>
+          )}
         </div>
         <div className="flex items-center gap-4 text-right">
           {restTime > 0 && (

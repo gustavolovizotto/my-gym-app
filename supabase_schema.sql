@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS public.exercises (
   muscle_group TEXT,
   rest_time INTEGER DEFAULT 90, -- Tempo de descanso em segundos
   target_sets INTEGER DEFAULT 3, -- Quantidade de séries alvo
+  rep_range TEXT, -- Intervalo de repetições, ex: "8-12"
+  description TEXT, -- Descrição ou observações do exercício
   user_id UUID REFERENCES auth.users(id) NOT NULL
 );
 
@@ -59,3 +61,5 @@ CREATE POLICY "Usuários gerenciam seus próprios logs" ON public.workout_logs F
 
 -- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS rest_time INTEGER DEFAULT 90;
 -- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS target_sets INTEGER DEFAULT 3;
+-- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS rep_range TEXT;
+-- ALTER TABLE public.exercises ADD COLUMN IF NOT EXISTS description TEXT;

@@ -23,6 +23,8 @@ export interface Exercise {
   split_id: string;
   rest_time: number;
   target_sets: number;
+  rep_range?: string;
+  description?: string;
 }
 
 export interface WorkoutLog {
@@ -43,7 +45,7 @@ const db = new Dexie("FitnessEvolutionDB") as Dexie & {
   workout_logs: EntityTable<WorkoutLog, "id">;
 };
 
-db.version(4).stores({
+db.version(5).stores({
   workout_divisions: "id, user_id, name, created_at",
   workout_splits: "id, division_id, name, order_index, created_at",
   exercises: "id, name, muscle_group, split_id",

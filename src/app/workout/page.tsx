@@ -16,6 +16,8 @@ interface Exercise {
   split_id: string;
   rest_time: number;
   target_sets: number;
+  rep_range?: string;
+  description?: string;
 }
 
 function TodayWorkoutSelection() {
@@ -211,6 +213,8 @@ function WorkoutContent() {
   const [newExerciseMuscle, setNewExerciseMuscle] = useState("");
   const [newExerciseRestTime, setNewExerciseRestTime] = useState(90);
   const [newExerciseTargetSets, setNewExerciseTargetSets] = useState(3);
+  const [newExerciseRepRange, setNewExerciseRepRange] = useState("");
+  const [newExerciseDescription, setNewExerciseDescription] = useState("");
 
   const workoutId = useMemo(() => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -278,7 +282,9 @@ function WorkoutContent() {
               muscle_group: ex.muscle_group,
               split_id: ex.split_id,
               rest_time: ex.rest_time,
-              target_sets: ex.target_sets
+              target_sets: ex.target_sets,
+              rep_range: ex.rep_range ?? undefined,
+              description: ex.description ?? undefined,
             });
           }
         });
@@ -311,6 +317,8 @@ function WorkoutContent() {
         muscle_group: newExerciseMuscle,
         rest_time: newExerciseRestTime,
         target_sets: newExerciseTargetSets,
+        rep_range: newExerciseRepRange || null,
+        description: newExerciseDescription || null,
         user_id: session.user.id,
       }
     ]);
@@ -321,6 +329,8 @@ function WorkoutContent() {
       setNewExerciseMuscle("");
       setNewExerciseRestTime(90);
       setNewExerciseTargetSets(3);
+      setNewExerciseRepRange("");
+      setNewExerciseDescription("");
       fetchExercises();
     } else {
       console.error("Erro ao adicionar exercício:", error);
@@ -384,6 +394,8 @@ function WorkoutContent() {
               splitId={splitId}
               restTime={ex.rest_time || 90}
               targetSets={ex.target_sets || 3}
+              repRange={ex.rep_range}
+              description={ex.description}
               onDeleted={fetchExercises}
             />
           ))
@@ -478,6 +490,28 @@ function WorkoutContent() {
                     onChange={e => setNewExerciseTargetSets(parseInt(e.target.value))}
                   />
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Repetições (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 8-12"
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  value={newExerciseRepRange}
+                  onChange={e => setNewExerciseRepRange(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Descrição (Opcional)</label>
+                <textarea
+                  placeholder="Ex: Pegada pronada, cotovelos a 45°"
+                  rows={3}
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none"
+                  value={newExerciseDescription}
+                  onChange={e => setNewExerciseDescription(e.target.value)}
+                />
               </div>
 
               <div className="modal-action mt-2">
