@@ -2,7 +2,6 @@
 
 import { SyncBadge } from "@/components/SyncBadge";
 import { WorkoutSelector } from "@/components/WorkoutSelector";
-import { XPBar } from "@/components/XPBar";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -11,23 +10,20 @@ import { Zap, Calendar, Flame } from "lucide-react";
 export default function Home() {
   const [session, setSession] = useState<any>(null);
   const [userName, setUserName] = useState<string>("Atleta");
-  const [xp, setXP] = useState(0);
   const [stats, setStats] = useState({ volume: 0, lastWorkout: "-", streak: 0 });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     const fetchProfileAndStats = async (userId: string) => {
-      // Fetch Profile (now includes xp and streak)
       const { data: profile } = await supabase
         .from("profiles")
-        .select("name, xp, streak")
+        .select("name, streak")
         .eq("id", userId)
         .single();
 
       if (profile) {
         if (profile.name) setUserName(profile.name);
-        setXP(profile.xp ?? 0);
       }
 
       // Fetch Workout Logs for Stats and Activity
@@ -123,11 +119,6 @@ export default function Home() {
           </h1>
         </div>
         <SyncBadge />
-      </div>
-
-      {/* XP Bar */}
-      <div className="mb-6">
-        <XPBar xp={xp} compact />
       </div>
 
       {/* Today's Stats */}

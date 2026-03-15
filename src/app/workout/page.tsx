@@ -6,7 +6,6 @@ import { ExerciseCard } from "@/components/ExerciseCard";
 import { WorkoutCompleteModal } from "@/components/WorkoutCompleteModal";
 import { ArrowLeft, Plus, ChevronRight, Trash2, X, Dumbbell, Play } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
-import { useXP, CompleteWorkoutResult } from "@/hooks/useXP";
 import { useWorkoutSession, useAutoFinishSetting } from "@/hooks/useWorkoutSession";
 import {
   DndContext,
@@ -314,9 +313,7 @@ function WorkoutContent() {
   const [editDescription, setEditDescription] = useState("");
   const [editVideoUrl, setEditVideoUrl] = useState("");
 
-  const { completeWorkout } = useXP();
-  const [completeResult, setCompleteResult] = useState<CompleteWorkoutResult | null>(null);
-  const [finishing, setFinishing] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
 
   const { session, isTraining, loaded: sessionLoaded, startSession, endSession } = useWorkoutSession(splitId);
   const { autoFinish } = useAutoFinishSetting();
@@ -331,7 +328,7 @@ function WorkoutContent() {
 
   // Auto-finish: when all exercises have their target sets completed
   useEffect(() => {
-    if (!autoFinish || !isTraining || finishing || !logs || exercises.length === 0) return;
+    if (!autoFinish || !isTraining || showComplete || !logs || exercises.length === 0) return;
 
     const allCompleted = exercises.every((ex) => {
       const count = logs.filter((log) => log.exercise_id === ex.id).length;
@@ -339,20 +336,10 @@ function WorkoutContent() {
     });
 
     if (allCompleted) {
-      const doAutoFinish = async () => {
-        setFinishing(true);
-        const result = await completeWorkout(logs.length, currentVolume);
-        endSession();
-        setFinishing(false);
-        if (result) {
-          setCompleteResult(result);
-        } else {
-          router.push("/");
-        }
-      };
-      doAutoFinish();
+      endSession();
+      setShowComplete(true);
     }
-  }, [autoFinish, isTraining, finishing, logs, exercises, completeWorkout, currentVolume, endSession, router]);
+  }, [autoFinish, isTraining, showComplete, logs, exercises, endSession]);
 
   const fetchExercises = async () => {
     if (!splitId) return;
@@ -609,30 +596,20 @@ function WorkoutContent() {
           </button>
         ) : (
           <button
-            onClick={async () => {
-              if (finishing) return;
+            onClick={() => {
               if (!confirm("Deseja finalizar o treino?")) return;
-              setFinishing(true);
-              const result = await completeWorkout(logs?.length ?? 0, currentVolume);
               endSession();
-              setFinishing(false);
-              if (result) {
-                setCompleteResult(result);
-              } else {
-                router.push("/");
-              }
+              setShowComplete(true);
             }}
-            disabled={finishing}
             className="btn btn-error w-full rounded-xl font-display text-xl tracking-wide h-14"
           >
-            {finishing ? <span className="loading loading-spinner loading-sm" /> : "Finalizar Treino"}
+            Finalizar Treino
           </button>
         )}
       </div>
 
-      {completeResult && (
+      {showComplete && (
         <WorkoutCompleteModal
-          result={completeResult}
           numSets={logs?.length ?? 0}
           sessionVolume={currentVolume}
         />
