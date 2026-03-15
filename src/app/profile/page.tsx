@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useXP } from "@/hooks/useXP";
+import { useAutoFinishSetting } from "@/hooks/useWorkoutSession";
 import { XPBar } from "@/components/XPBar";
 import { ACHIEVEMENTS, AchievementDef } from "@/lib/xp";
 import { Lock } from "lucide-react";
@@ -23,6 +24,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { isSupported, permission, subscribeToPush } = usePushNotifications();
   const { profile, unlockedAchievements } = useXP();
+  const { autoFinish, toggleAutoFinish } = useAutoFinishSetting();
 
   useEffect(() => {
     const getUser = async () => {
@@ -114,6 +116,18 @@ export default function ProfilePage() {
                 )}
               </div>
             )}
+            <div className="flex justify-between items-center py-3 border-b border-base-300">
+              <div>
+                <span className="text-sm font-medium">Finalizar treino automaticamente</span>
+                <p className="text-[10px] text-neutral-content mt-0.5">Encerra ao completar todos os exercícios</p>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary toggle-sm"
+                checked={autoFinish}
+                onChange={(e) => toggleAutoFinish(e.target.checked)}
+              />
+            </div>
             <div className="flex justify-between items-center py-3">
               <span className="text-sm font-medium">Versão do App</span>
               <span className="text-xs text-neutral-content">1.0.0</span>

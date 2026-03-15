@@ -7,7 +7,7 @@ import { WorkoutCompleteModal } from "@/components/WorkoutCompleteModal";
 import { ArrowLeft, Plus, ChevronRight, Trash2, X, Dumbbell, Play } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useXP, CompleteWorkoutResult } from "@/hooks/useXP";
-import { useWorkoutSession } from "@/hooks/useWorkoutSession";
+import { useWorkoutSession, useAutoFinishSetting } from "@/hooks/useWorkoutSession";
 import {
   DndContext,
   PointerSensor,
@@ -319,6 +319,7 @@ function WorkoutContent() {
   const [finishing, setFinishing] = useState(false);
 
   const { session, isTraining, loaded: sessionLoaded, startSession, endSession } = useWorkoutSession(splitId);
+  const { autoFinish } = useAutoFinishSetting();
   const workoutId = session?.workoutId ?? "none";
 
   const logs = useLiveQuery(
@@ -327,6 +328,31 @@ function WorkoutContent() {
   );
 
   const currentVolume = logs?.reduce((acc, log) => acc + log.weight * log.reps, 0) || 0;
+
+  // Auto-finish: when all exercises have their target sets completed
+  useEffect(() => {
+    if (!autoFinish || !isTraining || finishing || !logs || exercises.length === 0) return;
+
+    const allCompleted = exercises.every((ex) => {
+      const count = logs.filter((log) => log.exercise_id === ex.id).length;
+      return count >= (ex.target_sets || 3);
+    });
+
+    if (allCompleted) {
+      const doAutoFinish = async () => {
+        setFinishing(true);
+        const result = await completeWorkout(logs.length, currentVolume);
+        endSession();
+        setFinishing(false);
+        if (result) {
+          setCompleteResult(result);
+        } else {
+          router.push("/");
+        }
+      };
+      doAutoFinish();
+    }
+  }, [autoFinish, isTraining, finishing, logs, exercises, completeWorkout, currentVolume, endSession, router]);
 
   const fetchExercises = async () => {
     if (!splitId) return;

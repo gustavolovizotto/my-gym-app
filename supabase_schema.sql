@@ -99,3 +99,15 @@ CREATE TABLE IF NOT EXISTS public.achievements (
 
 ALTER TABLE public.achievements ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Conquistas próprias" ON public.achievements FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- 7. Tabela de Configurações do Usuário (Config)
+CREATE TABLE IF NOT EXISTS public.config (
+  pkconfig SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  name TEXT NOT NULL,
+  value BOOLEAN NOT NULL DEFAULT false,
+  UNIQUE(user_id, name)
+);
+
+ALTER TABLE public.config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Config própria" ON public.config FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
