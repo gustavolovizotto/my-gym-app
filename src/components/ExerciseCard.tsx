@@ -24,6 +24,7 @@ interface ExerciseCardProps {
   videoUrl?: string;
   onDeleted?: () => void;
   onEdit?: () => void;
+  isTraining?: boolean;
   dragHandleListeners?: Record<string, (...args: unknown[]) => void>;
   dragHandleAttributes?: DraggableAttributes;
 }
@@ -94,7 +95,7 @@ function VideoPreview({ url }: { url: string }) {
   );
 }
 
-export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId, restTime, targetSets, repRange, description, videoUrl, onDeleted, onEdit, dragHandleListeners, dragHandleAttributes }: ExerciseCardProps) {
+export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId, restTime, targetSets, repRange, description, videoUrl, onDeleted, onEdit, isTraining = false, dragHandleListeners, dragHandleAttributes }: ExerciseCardProps) {
   const [saved, setSaved] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const { scheduleLocalRestTimer } = usePushNotifications();
@@ -182,13 +183,15 @@ export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId
               <span className="text-sm font-display text-primary">{restTime}s</span>
             </div>
           )}
-          <div>
-            <span className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider block">Séries</span>
-            <span className={`text-sm font-display ${isCompleted ? 'text-success' : 'text-primary'}`}>
-              {completedCount}/{targetSets}
-            </span>
-          </div>
-          {onEdit && (
+          {isTraining && (
+            <div>
+              <span className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider block">Séries</span>
+              <span className={`text-sm font-display ${isCompleted ? 'text-success' : 'text-primary'}`}>
+                {completedCount}/{targetSets}
+              </span>
+            </div>
+          )}
+          {!isTraining && onEdit && (
             <button
               onClick={onEdit}
               className="btn btn-ghost btn-sm btn-circle text-neutral-content ml-1"
@@ -197,13 +200,15 @@ export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId
               <Pencil className="w-4 h-4" />
             </button>
           )}
-          <button
-            onClick={handleDelete}
-            className="btn btn-ghost btn-sm btn-circle text-error"
-            title="Remover exercício"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {!isTraining && (
+            <button
+              onClick={handleDelete}
+              className="btn btn-ghost btn-sm btn-circle text-error"
+              title="Remover exercício"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -227,6 +232,7 @@ export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId
         </div>
       )}
 
+      {isTraining && (
       <div className="p-4 bg-base-100/50">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
           <div className="flex gap-3">
@@ -276,6 +282,7 @@ export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId
           </button>
         </form>
       </div>
+      )}
     </div>
   );
 }

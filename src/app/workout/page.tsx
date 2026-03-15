@@ -4,9 +4,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { SyncBadge } from "@/components/SyncBadge";
 import { ExerciseCard } from "@/components/ExerciseCard";
 import { WorkoutCompleteModal } from "@/components/WorkoutCompleteModal";
-import { ArrowLeft, Plus, ChevronRight, Trash2, X, Dumbbell } from "lucide-react";
-import { Suspense, useMemo, useEffect, useState } from "react";
+import { ArrowLeft, Plus, ChevronRight, Trash2, X, Dumbbell, Play } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
 import { useXP, CompleteWorkoutResult } from "@/hooks/useXP";
+import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import {
   DndContext,
   PointerSensor,
@@ -44,12 +45,14 @@ function SortableExerciseCard({
   splitId,
   onDeleted,
   onEdit,
+  isTraining,
 }: {
   exercise: Exercise;
   workoutId: string;
   splitId: string;
-  onDeleted: () => void;
-  onEdit: () => void;
+  onDeleted?: () => void;
+  onEdit?: () => void;
+  isTraining?: boolean;
 }) {
   const {
     attributes,
@@ -83,6 +86,7 @@ function SortableExerciseCard({
         videoUrl={exercise.video_url}
         onDeleted={onDeleted}
         onEdit={onEdit}
+        isTraining={isTraining}
         dragHandleListeners={listeners as Record<string, (...args: unknown[]) => void>}
         dragHandleAttributes={attributes}
       />
@@ -314,15 +318,11 @@ function WorkoutContent() {
   const [completeResult, setCompleteResult] = useState<CompleteWorkoutResult | null>(null);
   const [finishing, setFinishing] = useState(false);
 
-  const workoutId = useMemo(() => {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    return `workout-${Date.now()}`;
-  }, []); // Unique ID for this session
+  const { session, isTraining, loaded: sessionLoaded, startSession, endSession } = useWorkoutSession(splitId);
+  const workoutId = session?.workoutId ?? "none";
 
   const logs = useLiveQuery(
-    () => db.workout_logs.where("workout_id").equals(workoutId).toArray(),
+    () => workoutId !== "none" ? db.workout_logs.where("workout_id").equals(workoutId).toArray() : [],
     [workoutId]
   );
 
@@ -475,38 +475,55 @@ function WorkoutContent() {
     return <TodayWorkoutSelection />;
   }
 
+  if (!sessionLoaded) {
+    return (
+      <div className="flex justify-center p-8">
+        <span className="loading loading-spinner text-primary"></span>
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 pt-6 pb-24 animate-fade-in">
       <header className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push(divisionId ? `/division/${divisionId}` : "/")} className="btn btn-circle btn-sm btn-ghost">
+          <button onClick={() => {
+            if (isTraining) {
+              if (!confirm("Você tem um treino em andamento. Deseja sair? Seu progresso será mantido.")) return;
+            }
+            router.push(divisionId ? `/division/${divisionId}` : "/");
+          }} className="btn btn-circle btn-sm btn-ghost">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <h1 className="font-display text-2xl text-base-content tracking-wide leading-none">
               Treino {splitName}
             </h1>
-            <p className="text-xs text-neutral-content">Em andamento</p>
+            <p className="text-xs text-neutral-content">
+              {isTraining ? "Em andamento" : "Visualização"}
+            </p>
           </div>
         </div>
         <SyncBadge />
       </header>
 
-      <div className="grid grid-cols-2 gap-2 mb-6">
-        <div className="bg-base-200 rounded-xl p-3 border border-base-300 flex flex-col gap-1">
-          <div className="flex items-baseline gap-0.5">
-            <span className="font-display text-xl text-primary leading-none">{currentVolume.toFixed(1)}</span>
-            <span className="text-[10px] text-neutral-content">kg</span>
+      {isTraining && (
+        <div className="grid grid-cols-2 gap-2 mb-6">
+          <div className="bg-base-200 rounded-xl p-3 border border-base-300 flex flex-col gap-1">
+            <div className="flex items-baseline gap-0.5">
+              <span className="font-display text-xl text-primary leading-none">{currentVolume.toFixed(1)}</span>
+              <span className="text-[10px] text-neutral-content">kg</span>
+            </div>
+            <p className="text-[10px] text-neutral-content leading-tight">Volume Total</p>
           </div>
-          <p className="text-[10px] text-neutral-content leading-tight">Volume Total</p>
-        </div>
-        <div className="bg-base-200 rounded-xl p-3 border border-base-300 flex flex-col gap-1">
-          <div className="flex items-baseline gap-0.5">
-            <span className="font-display text-xl text-base-content leading-none">{logs?.length || 0}</span>
+          <div className="bg-base-200 rounded-xl p-3 border border-base-300 flex flex-col gap-1">
+            <div className="flex items-baseline gap-0.5">
+              <span className="font-display text-xl text-base-content leading-none">{logs?.length || 0}</span>
+            </div>
+            <p className="text-[10px] text-neutral-content leading-tight">Séries Concluídas</p>
           </div>
-          <p className="text-[10px] text-neutral-content leading-tight">Séries Concluídas</p>
         </div>
-      </div>
+      )}
 
       <div className="flex flex-col gap-4">
         {loading ? (
@@ -534,8 +551,9 @@ function WorkoutContent() {
                     exercise={ex}
                     workoutId={workoutId}
                     splitId={splitId}
-                    onDeleted={fetchExercises}
-                    onEdit={() => openEditModal(ex)}
+                    onDeleted={isTraining ? undefined : fetchExercises}
+                    onEdit={isTraining ? undefined : () => openEditModal(ex)}
+                    isTraining={isTraining}
                   />
                 ))}
               </div>
@@ -543,33 +561,47 @@ function WorkoutContent() {
           </DndContext>
         )}
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-content/30 bg-base-200/50 p-4 text-neutral-content transition-all duration-200 active:scale-[0.98] hover:bg-base-200 hover:text-base-content"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="font-medium">Adicionar Exercício</span>
-        </button>
+        {!isTraining && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-content/30 bg-base-200/50 p-4 text-neutral-content transition-all duration-200 active:scale-[0.98] hover:bg-base-200 hover:text-base-content"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="font-medium">Adicionar Exercício</span>
+          </button>
+        )}
       </div>
 
       <div className="mt-8 mb-4">
-        <button
-          onClick={async () => {
-            if (finishing) return;
-            setFinishing(true);
-            const result = await completeWorkout(logs?.length ?? 0, currentVolume);
-            setFinishing(false);
-            if (result) {
-              setCompleteResult(result);
-            } else {
-              router.push("/");
-            }
-          }}
-          disabled={finishing}
-          className="btn btn-primary w-full rounded-xl font-display text-xl tracking-wide h-14"
-        >
-          {finishing ? <span className="loading loading-spinner loading-sm" /> : "Finalizar Treino"}
-        </button>
+        {!isTraining ? (
+          <button
+            onClick={() => startSession()}
+            className="btn btn-primary w-full rounded-xl font-display text-xl tracking-wide h-14 gap-2"
+          >
+            <Play className="w-6 h-6" />
+            Iniciar Treino
+          </button>
+        ) : (
+          <button
+            onClick={async () => {
+              if (finishing) return;
+              if (!confirm("Deseja finalizar o treino?")) return;
+              setFinishing(true);
+              const result = await completeWorkout(logs?.length ?? 0, currentVolume);
+              endSession();
+              setFinishing(false);
+              if (result) {
+                setCompleteResult(result);
+              } else {
+                router.push("/");
+              }
+            }}
+            disabled={finishing}
+            className="btn btn-error w-full rounded-xl font-display text-xl tracking-wide h-14"
+          >
+            {finishing ? <span className="loading loading-spinner loading-sm" /> : "Finalizar Treino"}
+          </button>
+        )}
       </div>
 
       {completeResult && (
