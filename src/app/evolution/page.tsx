@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { SyncBadge } from "@/components/SyncBadge";
-import { ArrowLeft, TrendingUp, Activity } from "lucide-react";
+import { ArrowLeft, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   LineChart,
@@ -13,8 +13,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  AreaChart,
-  Area
 } from "recharts";
 
 export default function EvolutionPage() {
@@ -63,20 +61,6 @@ export default function EvolutionPage() {
     fetchData();
   }, [router]);
 
-  // Process data for Total Volume Chart
-  const volumeData = useMemo(() => {
-    if (!logs.length) return [];
-    
-    const grouped = logs.reduce((acc, log) => {
-      const date = new Date(log.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-      if (!acc[date]) acc[date] = { date, volume: 0 };
-      acc[date].volume += log.weight * log.reps;
-      return acc;
-    }, {});
-
-    return Object.values(grouped);
-  }, [logs]);
-
   // Process data for Specific Exercise Max Weight Chart
   const exerciseData = useMemo(() => {
     if (selectedExercise === "all" || !logs.length) return [];
@@ -122,40 +106,6 @@ export default function EvolutionPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          {/* Volume Total Chart */}
-          <div className="bg-base-200 rounded-xl border border-base-300 p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <Activity className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-display text-lg text-base-content leading-none">Volume Total</h2>
-                <p className="text-[10px] text-neutral-content">Carga x Repetições por dia</p>
-              </div>
-            </div>
-            
-            <div className="h-[200px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={volumeData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-base-300)" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--color-neutral-content)' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: 'var(--color-neutral-content)' }} axisLine={false} tickLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: 'var(--color-base-100)', borderColor: 'var(--color-base-300)', borderRadius: '8px', fontSize: '12px' }}
-                    itemStyle={{ color: '#22c55e', fontWeight: 'bold' }}
-                  />
-                  <Area type="monotone" dataKey="volume" name="Volume (kg)" stroke="#22c55e" strokeWidth={2} fillOpacity={1} fill="url(#colorVolume)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
           {/* Progresso por Exercício Chart */}
           <div className="bg-base-200 rounded-xl border border-base-300 p-4">
             <div className="flex items-center gap-2 mb-4">
