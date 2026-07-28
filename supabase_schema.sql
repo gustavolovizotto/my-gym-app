@@ -1,3 +1,7 @@
+-- DEPRECATED: mantido só como histórico. A fonte da verdade agora é
+-- supabase/migrations/ (aplicada via `yarn db:push` / CI). Não rode este
+-- arquivo manualmente em projetos que já usam as migrations do CLI.
+
 -- 1. Tabela de Divisões de Treino (Workout Divisions)
 CREATE TABLE IF NOT EXISTS public.workout_divisions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

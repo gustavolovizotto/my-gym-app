@@ -1,28 +1,33 @@
--- DEPRECATED: substituída por
--- supabase/migrations/20260728163000_exercise_columns_and_indexes.sql
--- (aplicada via `yarn db:push` / CI). Mantida só como histórico.
-
 -- ==========================================
--- MIGRATION V2 — Constraints, índices e colunas faltando
--- ==========================================
--- ANTES de aplicar, rode esta query para verificar dados inválidos:
--- SELECT id, weight, reps FROM public.workout_logs WHERE weight <= 0 OR reps <= 0;
--- Se retornar linhas, corrija-as antes de adicionar as constraints.
+-- Colunas faltando em `exercises` e índices/constraints de performance e integridade
+-- Idempotente: seguro rodar mesmo que parte disso já exista no banco.
 -- ==========================================
 
--- 1. Colunas faltando em `exercises` (presentes no Dexie mas ausentes no Supabase)
+-- 1. Colunas usadas pelo app (Dexie/frontend) mas que podem faltar no Supabase
 ALTER TABLE public.exercises
   ADD COLUMN IF NOT EXISTS target_reps INTEGER,
-  ADD COLUMN IF NOT EXISTS description TEXT;
+  ADD COLUMN IF NOT EXISTS description TEXT,
+  ADD COLUMN IF NOT EXISTS video_url TEXT;
 
 -- 2. CHECK constraints em workout_logs para impedir dados fisicamente inválidos
-ALTER TABLE public.workout_logs
-  ADD CONSTRAINT workout_logs_weight_positive CHECK (weight > 0),
-  ADD CONSTRAINT workout_logs_reps_positive   CHECK (reps > 0);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'workout_logs_weight_positive'
+  ) THEN
+    ALTER TABLE public.workout_logs
+      ADD CONSTRAINT workout_logs_weight_positive CHECK (weight > 0);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'workout_logs_reps_positive'
+  ) THEN
+    ALTER TABLE public.workout_logs
+      ADD CONSTRAINT workout_logs_reps_positive CHECK (reps > 0);
+  END IF;
+END $$;
 
 -- 3. Índices para as queries mais frequentes
---    (Supabase cria índice automático em PKs e FKs declaradas, mas não em colunas usadas em WHERE/ORDER BY)
-
 -- Histórico por usuário ordenado por data (history/page.tsx, evolution/page.tsx)
 CREATE INDEX IF NOT EXISTS idx_workout_logs_user_timestamp
   ON public.workout_logs(user_id, timestamp DESC);

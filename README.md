@@ -94,7 +94,17 @@ O projeto foi construído com o que há de mais moderno no ecossistema React:
    ```
 
 4. **Configure o Banco de Dados (Supabase):**
-   Rode o script SQL contido no arquivo `supabase_schema.sql` no SQL Editor do seu painel do Supabase para criar as tabelas e políticas de segurança (RLS).
+   As migrations ficam em `supabase/migrations/` e são gerenciadas pela Supabase CLI (já incluída como devDependency).
+
+   Primeira vez (projeto novo, sem schema ainda):
+   ```bash
+   yarn db:link   # vincula o projeto local ao seu projeto Supabase (pede login)
+   yarn db:push   # aplica as migrations no banco remoto
+   ```
+
+   Se você já tem um schema criado manualmente no SQL Editor, rode `yarn db:pull` logo após o `db:link` para trazer o estado atual do banco como migration base, antes de aplicar novas.
+
+   Depois disso, qualquer migration nova adicionada em `supabase/migrations/` e enviada para a branch `main` é aplicada automaticamente pelo workflow `.github/workflows/supabase-migrations.yml` (veja "Automação de Migrations" abaixo).
 
 5. **Inicie o servidor de desenvolvimento:**
    ```bash
@@ -109,6 +119,25 @@ O projeto foi construído com o que há de mais moderno no ecossistema React:
 >    ```
 > 2. Abra o app **com internet** na primeira execução para aquecer o cache.
 > 3. Depois, você pode testar em *Offline* no DevTools (*Network → Offline*).
+
+### Automação de Migrations (CI/CD)
+
+O workflow `.github/workflows/supabase-migrations.yml` roda `supabase db push` automaticamente sempre que um commit com mudanças em `supabase/migrations/` é enviado para `main`. Para funcionar, configure estes **Repository Secrets** em Settings → Secrets and variables → Actions:
+
+| Secret | Onde encontrar |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | Painel Supabase → Account → Access Tokens (gere um novo) |
+| `SUPABASE_PROJECT_ID` | Referência do projeto (no seu caso: `dvvcupjhdcexfwkcdfjf`, visível na URL do projeto) |
+| `SUPABASE_DB_PASSWORD` | Project Settings → Database → Database Password (se não souber, pode resetar por lá) |
+
+Nunca coloque esses valores direto no código ou em `.env.local` versionado — eles ficam só nos Secrets do GitHub.
+
+Para criar uma nova migration localmente:
+```bash
+npx supabase migration new nome_da_migration
+# edite o arquivo .sql gerado em supabase/migrations/
+yarn db:push   # aplica manualmente, ou apenas dê push para main e deixe o CI aplicar
+```
 
 ---
 
