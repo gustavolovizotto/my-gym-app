@@ -104,7 +104,7 @@ O projeto foi construído com o que há de mais moderno no ecossistema React:
 
    Se você já tem um schema criado manualmente no SQL Editor, rode `yarn db:pull` logo após o `db:link` para trazer o estado atual do banco como migration base, antes de aplicar novas.
 
-   Depois disso, qualquer migration nova adicionada em `supabase/migrations/` e enviada para a branch `main` é aplicada automaticamente pelo workflow `.github/workflows/supabase-migrations.yml` (veja "Automação de Migrations" abaixo).
+   Migrations novas são aplicadas rodando `yarn db:push` manualmente (veja "Migrations do Banco" abaixo).
 
 5. **Inicie o servidor de desenvolvimento:**
    ```bash
@@ -120,23 +120,14 @@ O projeto foi construído com o que há de mais moderno no ecossistema React:
 > 2. Abra o app **com internet** na primeira execução para aquecer o cache.
 > 3. Depois, você pode testar em *Offline* no DevTools (*Network → Offline*).
 
-### Automação de Migrations (CI/CD)
+### Migrations do Banco
 
-O workflow `.github/workflows/supabase-migrations.yml` roda `supabase db push` automaticamente sempre que um commit com mudanças em `supabase/migrations/` é enviado para `main`. Para funcionar, configure estes **Repository Secrets** em Settings → Secrets and variables → Actions:
+As migrations ficam em `supabase/migrations/` e são aplicadas manualmente com a Supabase CLI (sem CI/CD):
 
-| Secret | Onde encontrar |
-|---|---|
-| `SUPABASE_ACCESS_TOKEN` | Painel Supabase → Account → Access Tokens (gere um novo) |
-| `SUPABASE_PROJECT_ID` | Referência do projeto (no seu caso: `dvvcupjhdcexfwkcdfjf`, visível na URL do projeto) |
-| `SUPABASE_DB_PASSWORD` | Project Settings → Database → Database Password (se não souber, pode resetar por lá) |
-
-Nunca coloque esses valores direto no código ou em `.env.local` versionado — eles ficam só nos Secrets do GitHub.
-
-Para criar uma nova migration localmente:
 ```bash
 npx supabase migration new nome_da_migration
 # edite o arquivo .sql gerado em supabase/migrations/
-yarn db:push   # aplica manualmente, ou apenas dê push para main e deixe o CI aplicar
+yarn db:push   # aplica no banco remoto
 ```
 
 ---
