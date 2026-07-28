@@ -33,6 +33,7 @@ interface Exercise {
   split_id: string;
   rest_time: number;
   target_sets: number;
+  target_reps?: number;
   rep_range?: string;
   description?: string;
   video_url?: string;
@@ -80,6 +81,7 @@ function SortableExerciseCard({
         splitId={splitId}
         restTime={exercise.rest_time || 90}
         targetSets={exercise.target_sets || 3}
+        targetReps={exercise.target_reps}
         repRange={exercise.rep_range}
         description={exercise.description}
         videoUrl={exercise.video_url}
@@ -159,6 +161,7 @@ function TodayWorkoutSelection() {
                 await db.workout_splits.put({
                   id: split.id,
                   division_id: div.id,
+                  user_id: session.user.id,
                   name: split.name,
                   order_index: split.order_index,
                   created_at: new Date().toISOString() // Fallback since it's not in the DB
@@ -300,6 +303,7 @@ function WorkoutContent() {
   const [newExerciseMuscle, setNewExerciseMuscle] = useState("");
   const [newExerciseRestTime, setNewExerciseRestTime] = useState(90);
   const [newExerciseTargetSets, setNewExerciseTargetSets] = useState(3);
+  const [newExerciseTargetReps, setNewExerciseTargetReps] = useState(12);
   const [newExerciseRepRange, setNewExerciseRepRange] = useState("");
   const [newExerciseDescription, setNewExerciseDescription] = useState("");
   const [newExerciseVideoUrl, setNewExerciseVideoUrl] = useState("");
@@ -309,6 +313,7 @@ function WorkoutContent() {
   const [editMuscle, setEditMuscle] = useState("");
   const [editRestTime, setEditRestTime] = useState(90);
   const [editTargetSets, setEditTargetSets] = useState(3);
+  const [editTargetReps, setEditTargetReps] = useState(12);
   const [editRepRange, setEditRepRange] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editVideoUrl, setEditVideoUrl] = useState("");
@@ -394,6 +399,7 @@ function WorkoutContent() {
               split_id: ex.split_id,
               rest_time: ex.rest_time,
               target_sets: ex.target_sets,
+              target_reps: ex.target_reps ?? undefined,
               rep_range: ex.rep_range ?? undefined,
               description: ex.description ?? undefined,
               video_url: ex.video_url ?? undefined,
@@ -429,6 +435,7 @@ function WorkoutContent() {
         muscle_group: newExerciseMuscle,
         rest_time: newExerciseRestTime,
         target_sets: newExerciseTargetSets,
+        target_reps: newExerciseTargetReps,
         rep_range: newExerciseRepRange || null,
         description: newExerciseDescription || null,
         video_url: newExerciseVideoUrl || null,
@@ -442,6 +449,7 @@ function WorkoutContent() {
       setNewExerciseMuscle("");
       setNewExerciseRestTime(90);
       setNewExerciseTargetSets(3);
+      setNewExerciseTargetReps(12);
       setNewExerciseRepRange("");
       setNewExerciseDescription("");
       setNewExerciseVideoUrl("");
@@ -457,6 +465,7 @@ function WorkoutContent() {
     setEditMuscle(ex.muscle_group);
     setEditRestTime(ex.rest_time);
     setEditTargetSets(ex.target_sets);
+    setEditTargetReps(ex.target_reps ?? 12);
     setEditRepRange(ex.rep_range ?? "");
     setEditDescription(ex.description ?? "");
     setEditVideoUrl(ex.video_url ?? "");
@@ -471,6 +480,7 @@ function WorkoutContent() {
       muscle_group: editMuscle,
       rest_time: editRestTime,
       target_sets: editTargetSets,
+      target_reps: editTargetReps,
       rep_range: editRepRange || null,
       description: editDescription || null,
       video_url: editVideoUrl || null,
@@ -663,7 +673,7 @@ function WorkoutContent() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Descanso (s)</label>
                   <input
@@ -687,10 +697,21 @@ function WorkoutContent() {
                     onChange={e => setEditTargetSets(parseInt(e.target.value))}
                   />
                 </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Reps alvo</label>
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    className="w-full bg-base-300 border border-base-300 text-base-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                    value={editTargetReps}
+                    onChange={e => setEditTargetReps(parseInt(e.target.value))}
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Repetições (Opcional)</label>
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Faixa de Repetições (Opcional)</label>
                 <input
                   type="text"
                   placeholder="Ex: 8-12"
@@ -788,7 +809,29 @@ function WorkoutContent() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Séries alvo</label>
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    className="w-full bg-base-300 border border-base-300 text-base-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                    value={newExerciseTargetSets}
+                    onChange={e => setNewExerciseTargetSets(parseInt(e.target.value))}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Reps alvo</label>
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    className="w-full bg-base-300 border border-base-300 text-base-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                    value={newExerciseTargetReps}
+                    onChange={e => setNewExerciseTargetReps(parseInt(e.target.value))}
+                  />
+                </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Descanso (s)</label>
                   <input
@@ -801,38 +844,27 @@ function WorkoutContent() {
                     onChange={e => setNewExerciseRestTime(parseInt(e.target.value))}
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Séries alvo</label>
-                  <input
-                    required
-                    type="number"
-                    min="1"
-                    className="w-full bg-base-300 border border-base-300 text-base-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
-                    value={newExerciseTargetSets}
-                    onChange={e => setNewExerciseTargetSets(parseInt(e.target.value))}
-                  />
-                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Repetições (Opcional)</label>
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Descrição / Observações (Opcional)</label>
+                <textarea
+                  rows={3}
+                  placeholder="Ex: Foco na contração, descer controlado..."
+                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none"
+                  value={newExerciseDescription}
+                  onChange={e => setNewExerciseDescription(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Faixa de Repetições (Opcional)</label>
                 <input
                   type="text"
                   placeholder="Ex: 8-12"
                   className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                   value={newExerciseRepRange}
                   onChange={e => setNewExerciseRepRange(e.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Descrição (Opcional)</label>
-                <textarea
-                  placeholder="Ex: Pegada pronada, cotovelos a 45°"
-                  rows={3}
-                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none"
-                  value={newExerciseDescription}
-                  onChange={e => setNewExerciseDescription(e.target.value)}
                 />
               </div>
 

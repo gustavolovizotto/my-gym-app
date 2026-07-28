@@ -62,7 +62,7 @@ self.addEventListener("message", (event) => {
     const delay = event.data.delay || 90000; // 90 segundos padrão
     
     setTimeout(() => {
-      self.registration.showNotification("⏳ Fim do descanso!", {
+      self.registration.showNotification("Fim do descanso!", {
         body: "Bora para a próxima série. O descanso acabou!",
         icon: "/icon-192x192.png",
         badge: "/icon-192x192.png",

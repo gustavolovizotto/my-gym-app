@@ -247,6 +247,7 @@ export function WorkoutSelector() {
             await db.workout_splits.put({
               id: split.localSplitId,
               division_id: localDivisionId,
+              user_id: session.user.id,
               name: split.name,
               order_index: split.order_index,
               created_at: nowIso,
@@ -292,7 +293,7 @@ export function WorkoutSelector() {
 
     if (divisionError || !divisionData) {
       console.error("Erro ao criar divisão:", divisionError);
-      alert("Erro ao criar divisão.");
+      showToast("Erro ao criar divisão.", "error");
       setIsSubmitting(false);
       return;
     }
@@ -350,7 +351,6 @@ export function WorkoutSelector() {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">🏋️</span>
               <div>
                 <div className="flex items-baseline gap-2">
                   <span className="font-display text-xl text-base-content tracking-wide">

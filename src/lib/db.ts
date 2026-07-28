@@ -11,6 +11,7 @@ export interface WorkoutDivision {
 export interface WorkoutSplit {
   id: string;
   division_id: string;
+  user_id: string;
   name: string;
   order_index: number;
   created_at: string;
@@ -23,6 +24,7 @@ export interface Exercise {
   split_id: string;
   rest_time: number;
   target_sets: number;
+  target_reps?: number;
   rep_range?: string;
   description?: string;
   video_url?: string;
@@ -60,6 +62,13 @@ db.version(7).stores({
   exercises: "id, name, muscle_group, split_id",
   workout_logs: "++id, workout_id, split_id, exercise_id, is_synced, timestamp",
   config: "++pkconfig, user_id, name",
+});
+
+db.version(5).stores({
+  workout_divisions: "id, user_id, name, created_at",
+  workout_splits: "id, division_id, name, order_index, created_at",
+  exercises: "id, name, muscle_group, split_id, target_reps, description",
+  workout_logs: "++id, workout_id, split_id, exercise_id, is_synced, timestamp",
 });
 
 export { db };

@@ -1,6 +1,6 @@
 <div align="center">
   <img src="public/MyGymAppLogo.svg" alt="MY GYM Logo" width="120" height="120" />
-  <h1>🏋️‍♂️ MY GYM</h1>
+  <h1>MY GYM</h1>
   <p><strong>Seu treino, sem limites. O app de musculação definitivo com arquitetura Offline-First.</strong></p>
   
   [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
@@ -10,12 +10,12 @@
 
   <br/>
   
-  ### 🚀 [Acesse o App Online Aqui](https://my-gym-app-seven.vercel.app/auth)
+  ### [Acesse o App Online Aqui](https://my-gym-app-seven.vercel.app/auth)
 </div>
 
 <br/>
 
-## 📖 Sobre o Projeto
+## Sobre o Projeto
 
 O **MY GYM** nasceu de uma dor real: **o sinal de internet nas academias costuma ser péssimo**. 
 Quantas vezes você já tentou abrir seu app de treino no meio da série e ele ficou carregando infinitamente porque você estava no subsolo da academia?
@@ -24,34 +24,34 @@ Este projeto é um **Progressive Web App (PWA)** focado em musculação que reso
 
 ---
 
-## ✨ Funcionalidades e Diferenciais
+## Funcionalidades e Diferenciais
 
-### 📡 1. Arquitetura Offline-First (O Grande Diferencial)
+### 1. Arquitetura Offline-First (O Grande Diferencial)
 * **Por que?** Academias frequentemente têm zonas cegas de Wi-Fi e 4G/5G.
 * **Como funciona:** Utilizamos **Dexie.js (IndexedDB)** para armazenar toda a estrutura do seu treino localmente no celular e **Serwist (Service Workers)** para fazer o cache da interface. O app carrega instantaneamente, lê os dados locais e, em background, sincroniza com o **Supabase**.
 
-### 📱 2. Experiência Nativa (PWA)
+### 2. Experiência Nativa (PWA)
 * **Por que?** Ninguém quer baixar mais um app pesado da loja de aplicativos.
 * **Como funciona:** O MY GYM pode ser "Instalado" diretamente do navegador (Safari/Chrome) para a tela inicial do celular. Ele roda em tela cheia, sem barra de navegação, parecendo e se comportando exatamente como um app nativo (iOS e Android).
 
-### 🏗️ 3. Estrutura Hierárquica Real de Treino
+### 3. Estrutura Hierárquica Real de Treino
 * **Por que?** Apps comuns limitam a organização. Fisiculturistas e atletas dividem seus treinos em blocos lógicos.
 * **Como funciona:** O app suporta 3 níveis de profundidade:
   1. **Divisão** (Ex: *Bulking PPL*, *Cutting ABC*)
   2. **Treino/Split** (Ex: *Push A*, *Pull B*, *Legs*)
   3. **Exercícios** (Ex: *Supino Reto*, *Crucifixo*)
 
-### ⏱️ 4. Cronômetro de Descanso com Push Notifications
+### 4. Cronômetro de Descanso com Push Notifications
 * **Por que?** O tempo de descanso é crucial para a hipertrofia. Ficar rolando o feed do Instagram faz você perder o tempo da série.
 * **Como funciona:** Ao finalizar uma série, um timer local é iniciado. Quando o tempo acaba, o Service Worker dispara uma **Notificação Push** no seu celular avisando que é hora de voltar para a barra.
 
-### 📈 5. Dashboard de Evolução (Analytics)
+### 5. Dashboard de Evolução (Analytics)
 * **Por que?** O que não é medido não pode ser melhorado. Ver o progresso é a maior fonte de motivação.
 * **Como funciona:** Uma aba dedicada com gráficos interativos (usando **Recharts**) que mostram a evolução do seu **Volume de Treino** (Carga × Repetições) e **Carga Máxima** ao longo do tempo.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 O projeto foi construído com o que há de mais moderno no ecossistema React:
 
@@ -66,7 +66,7 @@ O projeto foi construído com o que há de mais moderno no ecossistema React:
 
 ---
 
-## 🚀 Como Rodar Localmente
+## Como Rodar Localmente
 
 ### Pré-requisitos
 * Node.js (v18+)
@@ -112,7 +112,7 @@ O projeto foi construído com o que há de mais moderno no ecossistema React:
 
 ---
 
-## 🤝 Como Contribuir
+## Como Contribuir
 
 Este é um projeto público e contribuições são muito bem-vindas! Se você tem ideias para novas funcionalidades, encontrou um bug ou quer melhorar o código:
 
@@ -124,11 +124,11 @@ Este é um projeto público e contribuições são muito bem-vindas! Se você te
 
 ---
 
-## 📄 Licença
+## Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ---
 <div align="center">
-  Feito com ☕ e 🏋️‍♂️ por Gustavo Lovizotto
+  Feito por Gustavo Lovizotto
 </div>

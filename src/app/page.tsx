@@ -115,7 +115,7 @@ export default function Home() {
         <div>
           <p className="text-neutral-content text-sm font-medium mb-1">Bom treino,</p>
           <h1 className="text-2xl font-extrabold tracking-tight text-base-content">
-            {userName} 👊
+            {userName}
           </h1>
         </div>
         <SyncBadge />
