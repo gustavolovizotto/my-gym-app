@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronRight, Plus, Trash2, X, Sparkles } from "lucide-react";
+import { ChevronRight, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { db } from "@/lib/db";
@@ -338,97 +338,92 @@ export function WorkoutSelector() {
   return (
     <div className="flex flex-col gap-3">
       {divisions.length === 0 && (
-        <div className="text-center p-4 text-neutral-content text-sm">
+        <div className="text-center p-4 text-sm" style={{ color: "var(--color-neutral-600)" }}>
           Nenhuma divisão cadastrada. Crie uma para começar!
         </div>
       )}
-      
+
       {divisions.map((division) => (
         <button
           key={division.id}
           onClick={() => handleSelect(division.id)}
-          className="w-full text-left rounded-xl border bg-base-200 border-base-300 p-4 transition-all duration-200 active:scale-[0.98] hover:brightness-110"
+          className="w-full text-left flex items-center justify-between gap-3 bg-base-200 border p-[18px]"
+          style={{ borderColor: "var(--color-divider)" }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-display text-xl text-base-content tracking-wide">
-                    {division.name}
-                  </span>
-                </div>
-                <p className="text-xs text-neutral-content mt-0.5">
-                  Frequência: {division.frequency ?? "-"}x na semana
-                </p>
-              </div>
+          <div>
+            <div className="font-display text-[19px]">{division.name}</div>
+            <div className="text-[13px] mt-1" style={{ color: "var(--color-neutral-600)" }}>
+              Frequência: {division.frequency ?? "-"}x na semana
             </div>
-            <ChevronRight className="w-4 h-4 text-neutral-content shrink-0" />
           </div>
+          <ChevronRight className="w-5 h-5 shrink-0" style={{ color: "var(--color-neutral-600)" }} />
         </button>
       ))}
 
       <button
         onClick={() => setIsModalOpen(true)}
-        className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-content/30 bg-base-200/50 p-4 text-neutral-content transition-all duration-200 active:scale-[0.98] hover:bg-base-200 hover:text-base-content"
+        className="w-full flex items-center justify-start gap-2 p-4 bg-transparent font-display font-extrabold text-sm"
+        style={{ border: "2px dashed var(--color-divider)" }}
       >
-        <Plus className="w-5 h-5" />
-        <span className="font-medium">Criar Nova Divisão</span>
+        <Plus className="w-4 h-4" strokeWidth={2.5} />
+        Criar Nova Divisão
       </button>
 
       {/* Modal de Criação */}
       {isModalOpen && (
-        <dialog className="modal modal-open modal-bottom sm:modal-middle">
-          <div className="modal-box max-w-lg rounded-2xl border border-base-300 bg-base-200 p-0 overflow-hidden shadow-2xl">
-            <div className="px-5 py-4 border-b border-base-300 bg-linear-to-r from-primary/10 to-transparent">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-display text-xl text-base-content leading-none">Criar Divisão de Treino</h3>
-                    <p className="text-xs text-neutral-content mt-1">Organize seus dias de treino da semana</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-circle btn-sm"
-                  onClick={() => setIsModalOpen(false)}
-                  aria-label="Fechar modal"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ background: "color-mix(in srgb, var(--color-base-content) 50%, transparent)" }}
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md flex flex-col bg-base-100 max-h-[85vh]"
+            style={{ border: "1px solid var(--color-divider)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 flex items-center justify-between gap-3" style={{ borderBottom: "2px solid var(--color-divider)" }}>
+              <div>
+                <h3 className="font-display text-xl leading-none">Criar Divisão de Treino</h3>
+                <p className="text-xs mt-1.5" style={{ color: "var(--color-neutral-600)" }}>Organize seus dias de treino da semana</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Fechar modal"
+                style={{ color: "var(--color-neutral-600)" }}
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleCreate} className="p-5 flex flex-col gap-4">
+            <form onSubmit={handleCreate} className="p-5 flex flex-col gap-4 overflow-y-auto">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Nome da Divisão</label>
+                <label className="text-xs" style={{ color: "var(--color-neutral-600)" }}>Nome da Divisão</label>
                 <input
                   required
                   type="text"
                   placeholder="Ex: PPL"
-                  className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  className="input"
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider">Frequência na semana</label>
+                <label className="text-xs" style={{ color: "var(--color-neutral-600)" }}>Frequência na semana</label>
                 <input
                   required
                   type="number"
                   min="1"
                   max="7"
-                  className="w-full bg-base-300 border border-base-300 text-base-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  className="input"
                   value={formData.frequency}
                   onChange={e => setFormData({...formData, frequency: parseInt(e.target.value)})}
                 />
               </div>
 
               <div className="pt-1">
-                <p className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider mb-2">Separações (Dias)</p>
+                <p className="text-xs mb-2" style={{ color: "var(--color-neutral-600)" }}>Separações (Dias)</p>
                 <div className="flex flex-col gap-2.5">
                   {splits.map((split, index) => (
                     <div key={index} className="flex gap-2 items-center">
@@ -436,7 +431,7 @@ export function WorkoutSelector() {
                         required
                         type="text"
                         placeholder={`Ex: ${index === 0 ? 'Push' : index === 1 ? 'Pull' : 'Legs'}`}
-                        className="w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                        className="input"
                         value={split.name}
                         onChange={e => handleSplitChange(index, e.target.value)}
                       />
@@ -444,7 +439,8 @@ export function WorkoutSelector() {
                         <button
                           type="button"
                           onClick={() => handleRemoveSplit(index)}
-                          className="btn btn-square btn-ghost text-error rounded-xl"
+                          style={{ color: "var(--color-accent-700)" }}
+                          aria-label="Remover dia"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -454,39 +450,37 @@ export function WorkoutSelector() {
                 </div>
               </div>
 
-              <button type="button" onClick={handleAddSplit} className="btn btn-sm btn-outline rounded-xl mt-1 w-fit">
+              <button
+                type="button"
+                onClick={handleAddSplit}
+                className="flex items-center gap-1.5 text-sm font-semibold w-fit"
+                style={{ color: "var(--color-accent)" }}
+              >
                 <Plus className="w-4 h-4" /> Adicionar Dia
               </button>
 
-              <div className="modal-action mt-2">
-                <button type="button" className="btn btn-ghost rounded-xl" onClick={() => setIsModalOpen(false)}>
+              <div className="flex justify-end gap-2 mt-2">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
                   Cancelar
                 </button>
-                <button type="submit" className="btn btn-primary rounded-xl min-w-24" disabled={isSubmitting}>
-                  {isSubmitting ? <span className="loading loading-spinner"></span> : "Salvar"}
+                <button type="submit" className="btn btn-primary min-w-24" disabled={isSubmitting}>
+                  {isSubmitting ? <span className="loading loading-spinner loading-xs"></span> : "Salvar"}
                 </button>
               </div>
             </form>
           </div>
-          <form method="dialog" className="modal-backdrop">
-            <button onClick={() => setIsModalOpen(false)}>close</button>
-          </form>
-        </dialog>
+        </div>
       )}
 
       {toast && (
-        <div className="toast toast-top toast-center z-70">
-          <div
-            className={`alert shadow-lg ${
-              toast.type === "success"
-                ? "alert-success"
-                : toast.type === "warning"
-                  ? "alert-warning"
-                  : "alert-error"
-            }`}
-          >
-            <span>{toast.message}</span>
-          </div>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-70 px-4 py-3 text-sm font-medium max-w-[90%]"
+          style={{
+            background: toast.type === "error" ? "var(--color-accent-100)" : "var(--color-base-200)",
+            color: toast.type === "error" ? "var(--color-accent-700)" : "var(--color-base-content)",
+            border: "1px solid var(--color-divider)",
+          }}
+        >
+          {toast.message}
         </div>
       )}
     </div>

@@ -4,21 +4,33 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
+import { LogOut } from "lucide-react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useAutoFinishSetting } from "@/hooks/useWorkoutSession";
+import { useTheme } from "@/components/ThemeProvider";
+import { Switch } from "@/components/ui/Switch";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
+  const [userName, setUserName] = useState("Atleta");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { isSupported, permission, subscribeToPush } = usePushNotifications();
   const { autoFinish, toggleAutoFinish } = useAutoFinishSetting();
+  const { theme, toggleTheme } = useTheme();
+  const [offlineSync, setOfflineSync] = useState(true);
 
   useEffect(() => {
     const getUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("id", session.user.id)
+          .single();
+        if (profile?.name) setUserName(profile.name);
       } else {
         router.push("/auth");
       }
@@ -42,74 +54,78 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+  const rowStyle = { borderBottom: "1px solid var(--color-divider)" };
+  const mutedStyle = { color: "var(--color-neutral-600)" };
+
   return (
-    <div className="p-4 pb-24 animate-fade-in">
-      <header className="mb-6">
-        <h1 className="font-display text-4xl text-primary tracking-wide mb-1">Perfil</h1>
-        <p className="text-sm text-neutral-content">Sua jornada</p>
+    <div className="px-5 pt-7 pb-2 flex flex-col gap-[22px]">
+      <header>
+        <h1 className="text-[28px] font-display leading-none">Perfil</h1>
+        <p className="text-[13px] mt-0.5" style={mutedStyle}>Sua jornada</p>
       </header>
 
-      <div className="space-y-4">
-        {/* User Info */}
-        <div className="bg-base-200 rounded-2xl border border-base-300 p-5">
-          <div className="flex items-center gap-4 mb-5">
-            <div className="w-16 h-16 rounded-full bg-base-300 flex items-center justify-center border border-base-100">
-              <span className="font-display text-2xl text-primary">
-                {user.email?.charAt(0).toUpperCase() || "U"}
-              </span>
-            </div>
-            <div>
-              <h2 className="font-display text-2xl tracking-wide">Atleta</h2>
-              <p className="text-sm text-neutral-content">{user.email}</p>
-            </div>
-          </div>
-
-          <div className="space-y-3 mt-4">
-            <div className="flex justify-between items-center py-3 border-b border-base-300">
-              <span className="text-sm font-medium">Sincronização Offline</span>
-              <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-md font-medium">Ativa</span>
-            </div>
-            {isSupported && (
-              <div className="flex justify-between items-center py-3 border-b border-base-300">
-                <span className="text-sm font-medium">Notificações Push</span>
-                {permission === "granted" ? (
-                  <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-md font-medium">Ativas</span>
-                ) : (
-                  <button
-                    onClick={subscribeToPush}
-                    className="text-xs bg-warning/20 text-warning px-3 py-1.5 rounded-md font-medium hover:bg-warning/30 transition-colors"
-                  >
-                    Ativar
-                  </button>
-                )}
-              </div>
-            )}
-            <div className="flex justify-between items-center py-3 border-b border-base-300">
-              <div>
-                <span className="text-sm font-medium">Finalizar treino automaticamente</span>
-                <p className="text-[10px] text-neutral-content mt-0.5">Encerra ao completar todos os exercícios</p>
-              </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-primary toggle-sm"
-                checked={autoFinish}
-                onChange={(e) => toggleAutoFinish(e.target.checked)}
-              />
-            </div>
-            <div className="flex justify-between items-center py-3">
-              <span className="text-sm font-medium">Versão do App</span>
-              <span className="text-xs text-neutral-content">1.0.0</span>
-            </div>
+      <div className="border bg-base-200" style={{ borderColor: "var(--color-divider)" }}>
+        <div className="flex items-center gap-3.5 p-[18px]" style={rowStyle}>
+          <span
+            className="w-11 h-11 shrink-0 flex items-center justify-center font-display text-lg"
+            style={{ background: "var(--color-neutral-200)" }}
+          >
+            {userName.charAt(0).toUpperCase()}
+          </span>
+          <div>
+            <div className="font-display text-[17px]">{userName}</div>
+            <p className="text-[13px] mt-0.5" style={mutedStyle}>{user.email}</p>
           </div>
         </div>
 
-        <button
-          onClick={handleSignOut}
-          className="w-full bg-base-200 border border-error/30 text-error rounded-xl py-4 font-display text-xl tracking-wide hover:bg-error/10 transition-colors"
-        >
-          Sair da Conta
-        </button>
+        <div className="flex items-center justify-between px-[18px] py-4" style={rowStyle}>
+          <div>
+            <div className="text-sm font-semibold">Modo Escuro</div>
+            <p className="text-xs mt-0.5" style={mutedStyle}>Interface com fundo escuro</p>
+          </div>
+          <Switch checked={theme === "dark"} onChange={toggleTheme} label="Modo Escuro" />
+        </div>
+
+        <div className="flex items-center justify-between px-[18px] py-4" style={rowStyle}>
+          <div className="text-sm font-semibold">Sincronização Offline</div>
+          <Switch checked={offlineSync} onChange={setOfflineSync} label="Sincronização Offline" />
+        </div>
+
+        {isSupported && (
+          <div className="flex items-center justify-between px-[18px] py-4" style={rowStyle}>
+            <div className="text-sm font-semibold">Notificações Push</div>
+            {permission === "granted" ? (
+              <Switch checked onChange={() => {}} label="Notificações Push" />
+            ) : (
+              <button onClick={subscribeToPush} className="text-xs font-bold" style={{ color: "var(--color-accent)" }}>
+                Ativar
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between px-[18px] py-4" style={rowStyle}>
+          <div>
+            <div className="text-sm font-semibold">Finalizar treino automaticamente</div>
+            <p className="text-xs mt-0.5" style={mutedStyle}>Encerra ao completar todos os exercícios</p>
+          </div>
+          <Switch checked={autoFinish} onChange={toggleAutoFinish} label="Finalizar treino automaticamente" />
+        </div>
+
+        <div className="flex items-center justify-between px-[18px] py-4">
+          <div className="text-sm font-semibold">Versão do App</div>
+          <div className="text-[13px]" style={mutedStyle}>1.0.0</div>
+        </div>
       </div>
+
+      <button
+        onClick={handleSignOut}
+        className="w-full flex items-center justify-center gap-2 py-4 bg-transparent font-display font-extrabold text-sm"
+        style={{ border: "1px solid var(--color-accent)", color: "var(--color-accent-700)" }}
+      >
+        <LogOut className="w-4 h-4" />
+        Sair da Conta
+      </button>
     </div>
   );
 }

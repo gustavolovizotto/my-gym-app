@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { useState } from "react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Trash2, Pencil, PlayCircle, ChevronUp, GripVertical } from "lucide-react";
+import { Trash2, Pencil, PlayCircle, ChevronUp, GripVertical, Check } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { DraggableAttributes } from "@dnd-kit/core";
 
@@ -50,7 +50,7 @@ function VideoPreview({ url }: { url: string }) {
       <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
         <iframe
           src={youtubeEmbed}
-          className="absolute inset-0 w-full h-full rounded-lg"
+          className="absolute inset-0 w-full h-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           loading="lazy"
@@ -65,7 +65,7 @@ function VideoPreview({ url }: { url: string }) {
       <img
         src={url}
         alt="Execucao do exercicio"
-        className="w-full rounded-lg object-contain max-h-64"
+        className="w-full object-contain max-h-64"
         loading="lazy"
       />
     );
@@ -75,7 +75,7 @@ function VideoPreview({ url }: { url: string }) {
     return (
       <video
         src={url}
-        className="w-full rounded-lg max-h-64"
+        className="w-full max-h-64"
         controls
         playsInline
         loop
@@ -159,81 +159,88 @@ export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId
     }
   };
 
+  const mutedStyle = { color: "var(--color-neutral-600)" };
+  const accentTextStyle = { color: "var(--color-accent-700)" };
+
   return (
     <>
-      <div className="bg-base-200 rounded-xl border border-base-300 overflow-hidden">
-        <div className="p-4 border-b border-base-300 flex items-center justify-between">
-          {dragHandleListeners && (
-            <button
-              {...dragHandleListeners}
-              {...dragHandleAttributes}
-              className="btn btn-ghost btn-sm btn-circle cursor-grab active:cursor-grabbing text-neutral-content mr-2 shrink-0 touch-none"
-              aria-label="Arrastar para reordenar"
-              tabIndex={0}
+      <div className="bg-base-200 border" style={{ borderColor: "var(--color-divider)" }}>
+        <div className="p-4 flex justify-between items-start gap-2.5" style={{ borderBottom: "1px solid var(--color-divider)" }}>
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            {dragHandleListeners && (
+              <button
+                {...dragHandleListeners}
+                {...dragHandleAttributes}
+                className="shrink-0 mt-0.5 cursor-grab active:cursor-grabbing touch-none"
+                style={mutedStyle}
+                aria-label="Arrastar para reordenar"
+                tabIndex={0}
+              >
+                <GripVertical className="w-4 h-4" />
+              </button>
+            )}
+            <div
+              className="w-6 h-6 shrink-0 mt-0.5 border-2 flex items-center justify-center"
+              style={{
+                borderColor: isCompleted ? "var(--color-accent)" : "var(--color-divider)",
+                background: isCompleted ? "var(--color-accent)" : "transparent",
+                color: "var(--color-base-100)",
+              }}
+              aria-hidden="true"
             >
-              <GripVertical className="w-4 h-4" />
-            </button>
-          )}
-          <div className="flex-1">
-            <h3 className="font-display text-xl text-base-content tracking-wide">{name}</h3>
-            <p className="text-xs text-neutral-content font-medium">{muscleGroup}</p>
-            {repRange && (
-              <p className="text-xs text-primary font-semibold mt-0.5">{repRange} reps</p>
-            )}
-            {description && (
-              <p className="text-xs text-neutral-content/70 mt-1 leading-snug">{description}</p>
-            )}
+              {isCompleted && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+            </div>
+            <div className="min-w-0" style={isCompleted ? { opacity: 0.5, textDecoration: "line-through" } : undefined}>
+              <div className="font-display text-base">{name}</div>
+              <div className="text-[12.5px] mt-0.5" style={mutedStyle}>
+                {muscleGroup}
+                {repRange && <> · <span style={{ ...accentTextStyle, fontWeight: 600 }}>{repRange}</span></>}
+                {!repRange && targetReps ? <> · <span style={{ ...accentTextStyle, fontWeight: 600 }}>{targetReps} reps</span></> : null}
+              </div>
+              {description && (
+                <div className="text-xs mt-1.5 leading-relaxed" style={mutedStyle}>{description}</div>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-right">
+          <div className="text-right shrink-0 flex flex-col items-end gap-2">
             {restTime > 0 && (
               <div>
-                <span className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider block">Descanso</span>
-                <span className="text-sm font-display text-primary">{restTime}s</span>
-              </div>
-            )}
-            {targetReps && (
-              <div>
-                <span className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider block">Reps</span>
-                <span className="text-sm font-display text-base-content">{targetReps}</span>
+                <div className="text-[10px] uppercase tracking-wider" style={mutedStyle}>Descanso</div>
+                <div className="font-bold text-sm mt-0.5" style={accentTextStyle}>{restTime}s</div>
               </div>
             )}
             {isTraining && (
               <div>
-                <span className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider block">Séries</span>
-                <span className={`text-sm font-display ${isCompleted ? 'text-success' : 'text-primary'}`}>
+                <div className="text-[10px] uppercase tracking-wider" style={mutedStyle}>Séries</div>
+                <div className="font-display text-sm mt-0.5" style={isCompleted ? { color: "var(--color-accent)" } : accentTextStyle}>
                   {completedCount}/{targetSets}
-                </span>
+                </div>
               </div>
             )}
-            {!isTraining && onEdit && (
-              <button
-                onClick={onEdit}
-                className="btn btn-ghost btn-sm btn-circle text-neutral-content ml-1"
-                title="Editar exercício"
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
-            )}
             {!isTraining && (
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="btn btn-ghost btn-sm btn-circle text-error"
-                title="Remover exercício"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex gap-1.5">
+                {onEdit && (
+                  <button onClick={onEdit} title="Editar exercício" style={mutedStyle}>
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+                <button onClick={() => setShowDeleteModal(true)} title="Remover exercício" style={accentTextStyle}>
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             )}
           </div>
         </div>
 
         {videoUrl && (
-          <div className="border-b border-base-300">
+          <div style={{ borderBottom: "1px solid var(--color-divider)" }}>
             <button
               onClick={() => setShowVideo(v => !v)}
-              className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-primary hover:bg-base-300/50 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold"
+              style={accentTextStyle}
             >
               <span className="flex items-center gap-1.5">
-                <PlayCircle className="w-3.5 h-3.5" />
+                <PlayCircle className="w-3.5 h-3.5" fill="currentColor" stroke="none" />
                 Ver execução
               </span>
               <ChevronUp className={`w-3.5 h-3.5 transition-transform duration-200 ${showVideo ? "" : "rotate-180"}`} />
@@ -251,50 +258,53 @@ export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider mb-1.5 block">
+                <label className="text-[10px] uppercase tracking-wider mb-1.5 block" style={mutedStyle}>
                   Peso (kg)
                 </label>
                 <input
                   type="number"
                   step="0.1"
                   placeholder="0.0"
-                  className={`w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-lg px-3 py-2.5 text-lg font-display tracking-wide focus:outline-none focus:ring-1 focus:ring-primary ${errors.weight ? "border-error focus:ring-error" : ""}`}
+                  className="input font-display text-lg"
+                  style={errors.weight ? { borderColor: "var(--color-accent)" } : undefined}
                   {...register("weight", { valueAsNumber: true })}
                 />
                 {errors.weight && (
-                  <span className="text-error text-[10px] mt-1 block">{errors.weight.message}</span>
+                  <span className="text-[10px] mt-1 block" style={accentTextStyle}>{errors.weight.message}</span>
                 )}
               </div>
 
               <div className="flex-1">
-                <label className="text-[10px] font-semibold text-neutral-content uppercase tracking-wider mb-1.5 block">
+                <label className="text-[10px] uppercase tracking-wider mb-1.5 block" style={mutedStyle}>
                   Repetições
                 </label>
                 <input
                   type="number"
                   placeholder="0"
-                  className={`w-full bg-base-300 border border-base-300 text-base-content placeholder:text-neutral-content rounded-lg px-3 py-2.5 text-lg font-display tracking-wide focus:outline-none focus:ring-1 focus:ring-primary ${errors.reps ? "border-error focus:ring-error" : ""}`}
+                  className="input font-display text-lg"
+                  style={errors.reps ? { borderColor: "var(--color-accent)" } : undefined}
                   {...register("reps", { valueAsNumber: true })}
                 />
                 {errors.reps && (
-                  <span className="text-error text-[10px] mt-1 block">{errors.reps.message}</span>
+                  <span className="text-[10px] mt-1 block" style={accentTextStyle}>{errors.reps.message}</span>
                 )}
               </div>
             </div>
 
             {errorMsg && (
-              <p className="text-error text-xs text-center">{errorMsg}</p>
+              <p className="text-xs text-center" style={accentTextStyle}>{errorMsg}</p>
             )}
 
             <button
               type="submit"
-              className={`w-full rounded-lg py-2.5 text-sm font-semibold transition-all duration-200 ${
+              className="w-full py-2.5 text-sm font-semibold"
+              style={
                 saved
-                  ? "bg-primary/20 text-primary border border-primary/30"
+                  ? { background: "var(--color-accent-100)", color: "var(--color-accent-700)" }
                   : isCompleted
-                    ? "bg-base-300 text-base-content hover:brightness-110 active:scale-[0.98]"
-                    : "bg-primary text-primary-content hover:brightness-110 active:scale-[0.98]"
-              }`}
+                    ? { background: "var(--color-base-300)", color: "var(--color-base-content)" }
+                    : { background: "var(--color-accent)", color: "var(--color-primary-content)" }
+              }
             >
               {saved ? "Série Registrada!" : isCompleted ? "Adicionar Série Extra" : "Registrar Série"}
             </button>
@@ -304,17 +314,24 @@ export function ExerciseCard({ exerciseId, name, muscleGroup, workoutId, splitId
       </div>
 
       {showDeleteModal && (
-        <dialog className="modal modal-open" aria-modal="true">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">Remover exercício</h3>
-            <p className="py-4">Tem certeza que deseja remover <strong>{name}</strong>?</p>
-            <div className="modal-action">
-              <button className="btn btn-ghost" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
-              <button className="btn btn-error" onClick={confirmDelete}>Remover</button>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "color-mix(in srgb, var(--color-base-content) 50%, transparent)" }}
+          onClick={() => setShowDeleteModal(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-base-100 p-5 flex flex-col gap-3"
+            style={{ border: "1px solid var(--color-divider)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-display text-lg">Remover exercício</h3>
+            <p className="text-sm" style={mutedStyle}>Tem certeza que deseja remover <strong style={{ color: "var(--color-base-content)" }}>{name}</strong>?</p>
+            <div className="flex justify-end gap-2 mt-2">
+              <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancelar</button>
+              <button className="btn" style={{ background: "var(--color-accent)", color: "var(--color-primary-content)" }} onClick={confirmDelete}>Remover</button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => setShowDeleteModal(false)} />
-        </dialog>
+        </div>
       )}
     </>
   );

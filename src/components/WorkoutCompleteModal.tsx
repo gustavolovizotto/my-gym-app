@@ -15,52 +15,57 @@ export function WorkoutCompleteModal({
   const router = useRouter();
 
   return (
-    <dialog className="modal modal-open">
-      <div className="modal-box max-w-sm rounded-2xl border border-base-300 bg-base-200 p-0 overflow-hidden shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "color-mix(in srgb, var(--color-base-content) 50%, transparent)" }}
+    >
+      <div className="w-full max-w-sm bg-base-100" style={{ border: "1px solid var(--color-divider)" }}>
         {/* Header */}
-        <div className="bg-linear-to-b from-primary/20 to-transparent px-6 pt-8 pb-5 text-center">
-          <div className="flex justify-center mb-3">
-            <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-              <Trophy className="w-8 h-8 text-primary" />
-            </div>
+        <div className="px-6 pt-8 pb-5 text-center">
+          <div
+            className="w-14 h-14 mx-auto mb-4 flex items-center justify-center"
+            style={{ background: "var(--color-accent-100)", color: "var(--color-accent-700)" }}
+          >
+            <Trophy className="w-7 h-7" />
           </div>
-          <h2 className="font-display text-3xl text-base-content tracking-wide">
+          <h2 className="font-display text-3xl leading-[1.08]">
             TREINO
-          </h2>
-          <h2 className="font-display text-3xl text-primary tracking-wide -mt-1">
-            CONCLUÍDO!
+            <br />
+            <span style={{ color: "var(--color-accent)" }}>CONCLUÍDO!</span>
           </h2>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-2 px-5 mb-4">
-          <div className="bg-base-300 rounded-xl p-3 flex flex-col gap-0.5">
-            <Zap className="w-3.5 h-3.5 text-primary mb-1" />
-            <span className="font-display text-lg text-base-content leading-none">
-              {numSets}
-            </span>
-            <span className="text-[10px] text-neutral-content">Séries</span>
+        <div
+          className="grid grid-cols-2 gap-px mx-5 mb-5 border"
+          style={{ background: "var(--color-divider)", borderColor: "var(--color-divider)" }}
+        >
+          <div className="bg-base-100 p-3.5 flex flex-col gap-1.5">
+            <Zap className="w-4 h-4" style={{ color: "var(--color-accent)" }} />
+            <div className="font-display text-lg leading-none">{numSets}</div>
+            <div className="text-[10.5px] uppercase tracking-wider" style={{ color: "var(--color-neutral-600)" }}>Séries</div>
           </div>
-          <div className="bg-base-300 rounded-xl p-3 flex flex-col gap-0.5">
-            <Flame className="w-3.5 h-3.5 text-orange-400 mb-1" />
-            <span className="font-display text-lg text-base-content leading-none">
+          <div className="bg-base-100 p-3.5 flex flex-col gap-1.5">
+            <Flame className="w-4 h-4" style={{ color: "var(--color-accent)" }} />
+            <div className="font-display text-lg leading-none">
               {sessionVolume.toLocaleString("pt-BR")}
-              <span className="text-[10px] text-neutral-content ml-0.5">kg</span>
-            </span>
-            <span className="text-[10px] text-neutral-content">Volume</span>
+              <span className="text-[11px] font-normal font-sans opacity-60 ml-0.5">kg</span>
+            </div>
+            <div className="text-[10.5px] uppercase tracking-wider" style={{ color: "var(--color-neutral-600)" }}>Volume</div>
           </div>
         </div>
 
         {/* Action */}
-        <div className="px-5 pb-6">
+        <div className="px-5 pb-5">
           <button
             onClick={() => router.push("/")}
-            className="btn btn-primary w-full rounded-xl font-display text-xl tracking-wide h-12"
+            className="w-full py-3.5 px-5 text-left font-display text-lg"
+            style={{ background: "var(--color-accent)", color: "var(--color-primary-content)" }}
           >
             Concluir
           </button>
         </div>
       </div>
-    </dialog>
+    </div>
   );
 }

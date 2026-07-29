@@ -123,35 +123,31 @@ export default function HistoryPage() {
   const totalWorkouts = sessions.length;
 
   return (
-    <div className="px-4 pt-6 pb-24 animate-fade-in">
-      <header className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/")} className="btn btn-circle btn-sm btn-ghost">
-            <ArrowLeft className="w-5 h-5" />
+    <div className="px-5 pt-6 pb-2 flex flex-col gap-[18px]">
+      <header className="flex justify-between items-start gap-3">
+        <div className="flex items-center gap-3.5">
+          <button onClick={() => router.push("/")} aria-label="Voltar">
+            <ArrowLeft className="w-[22px] h-[22px]" />
           </button>
           <div>
-            <h1 className="font-display text-2xl text-base-content tracking-wide leading-none">
-              Histórico
-            </h1>
-            <p className="text-xs text-neutral-content">Seus treinos passados</p>
+            <h1 className="text-[22px] font-display leading-none">Histórico</h1>
+            <p className="text-[13px] mt-0.5" style={{ color: "var(--color-neutral-600)" }}>Seus treinos passados</p>
           </div>
         </div>
         <SyncBadge />
       </header>
 
-      <div className="grid grid-cols-2 gap-2 mb-6">
-        <div className="bg-base-200 rounded-xl p-3 border border-base-300 flex flex-col gap-1">
-          <div className="flex items-baseline gap-0.5">
-            <span className="font-display text-xl text-primary leading-none">{totalVolume.toLocaleString('pt-BR')}</span>
-            <span className="text-[10px] text-neutral-content">kg</span>
-          </div>
-          <p className="text-[10px] text-neutral-content leading-tight">Volume Total</p>
+      <div
+        className="grid grid-cols-2 gap-px border"
+        style={{ background: "var(--color-divider)", borderColor: "var(--color-divider)" }}
+      >
+        <div className="bg-base-100 p-3.5">
+          <div className="font-display text-[19px] leading-none">{totalVolume.toLocaleString('pt-BR')}</div>
+          <div className="text-[10.5px] uppercase tracking-wider mt-1" style={{ color: "var(--color-neutral-600)" }}>Volume Total</div>
         </div>
-        <div className="bg-base-200 rounded-xl p-3 border border-base-300 flex flex-col gap-1">
-          <div className="flex items-baseline gap-0.5">
-            <span className="font-display text-xl text-base-content leading-none">{totalWorkouts}</span>
-          </div>
-          <p className="text-[10px] text-neutral-content leading-tight">Treinos Realizados</p>
+        <div className="bg-base-100 p-3.5">
+          <div className="font-display text-[19px] leading-none">{totalWorkouts}</div>
+          <div className="text-[10.5px] uppercase tracking-wider mt-1" style={{ color: "var(--color-neutral-600)" }}>Treinos Realizados</div>
         </div>
       </div>
 
@@ -161,65 +157,61 @@ export default function HistoryPage() {
             <span className="loading loading-spinner text-primary"></span>
           </div>
         ) : sessions.length === 0 ? (
-          <div className="bg-base-200 rounded-xl border border-base-300 p-8 text-center">
-            <p className="text-sm text-neutral-content">Nenhum treino registrado ainda.</p>
+          <div className="bg-base-200 border p-8 text-center" style={{ borderColor: "var(--color-divider)" }}>
+            <p className="text-sm" style={{ color: "var(--color-neutral-600)" }}>Nenhum treino registrado ainda.</p>
           </div>
         ) : (
           sessions.map((session) => {
             const isExpanded = expandedSessions.has(session.workout_id);
             return (
-              <div key={session.workout_id} className="bg-base-200 rounded-xl border border-base-300 overflow-hidden">
-                <button 
+              <div key={session.workout_id} className="bg-base-200 border" style={{ borderColor: "var(--color-divider)" }}>
+                <button
                   onClick={() => toggleSession(session.workout_id)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-base-300/50 transition-colors"
+                  className="w-full p-4 flex items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                      <Calendar className="w-5 h-5" />
-                    </div>
+                    <span
+                      className="w-[34px] h-[34px] shrink-0 flex items-center justify-center"
+                      style={{ background: "var(--color-accent-100)", color: "var(--color-accent-700)" }}
+                    >
+                      <Calendar className="w-[17px] h-[17px]" />
+                    </span>
                     <div className="text-left">
-                      <h3 className="font-display text-lg text-base-content tracking-wide">
-                        {session.split_name}
-                      </h3>
-                      <p className="text-xs text-neutral-content font-medium">
-                        {session.date} • {session.total_volume.toLocaleString('pt-BR')} kg
-                      </p>
+                      <div className="font-display text-[15px]">{session.split_name}</div>
+                      <div className="text-xs mt-0.5" style={{ color: "var(--color-neutral-600)" }}>
+                        {session.date} · {session.total_volume.toLocaleString('pt-BR')} kg
+                      </div>
                     </div>
                   </div>
                   {isExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-neutral-content" />
+                    <ChevronUp className="w-[18px] h-[18px]" style={{ color: "var(--color-neutral-600)" }} />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-neutral-content" />
+                    <ChevronDown className="w-[18px] h-[18px]" style={{ color: "var(--color-neutral-600)" }} />
                   )}
                 </button>
 
                 {isExpanded && (
-                  <div className="p-4 pt-0 border-t border-base-300/50 bg-base-100/30">
-                    <div className="flex flex-col gap-4 mt-4">
-                      {Object.values(session.exercises).map((exercise, idx) => (
-                        <div key={idx} className="flex flex-col gap-2">
-                          <h4 className="font-display text-sm text-base-content/80">
-                            {exercise.name}
-                          </h4>
-                          <div className="grid grid-cols-3 gap-2">
-                            {exercise.sets.map((set, setIdx) => (
-                              <div key={setIdx} className="bg-base-100 rounded-lg p-2 border border-base-300 flex flex-col items-center justify-center">
-                                <span className="text-[10px] text-neutral-content uppercase tracking-wider mb-0.5">
-                                  Série {setIdx + 1}
-                                </span>
-                                <div className="flex items-baseline gap-0.5">
-                                  <span className="font-display text-primary">{set.weight}</span>
-                                  <span className="text-[10px] text-neutral-content">kg</span>
-                                </div>
-                                <span className="text-xs text-base-content font-medium">
-                                  {set.reps} reps
-                                </span>
+                  <div className="px-4 pb-4 pt-3.5 flex flex-col gap-3.5" style={{ borderTop: "1px solid var(--color-divider)" }}>
+                    {Object.values(session.exercises).map((exercise, idx) => (
+                      <div key={idx}>
+                        <div className="text-[13px] font-bold mb-2">{exercise.name}</div>
+                        <div className="flex flex-wrap gap-2">
+                          {exercise.sets.map((set, setIdx) => (
+                            <div key={setIdx} className="border px-3 py-2 min-w-[76px]" style={{ borderColor: "var(--color-divider)" }}>
+                              <div className="text-[9.5px] uppercase tracking-wider" style={{ color: "var(--color-neutral-600)" }}>
+                                Série {setIdx + 1}
                               </div>
-                            ))}
-                          </div>
+                              <div className="font-display text-[15px] mt-0.5" style={{ color: "var(--color-accent-700)" }}>
+                                {set.weight}<span className="text-[10px] font-normal font-sans" style={{ color: "var(--color-base-content)" }}> kg</span>
+                              </div>
+                              <div className="text-[11px] mt-0.5" style={{ color: "var(--color-neutral-600)" }}>
+                                {set.reps} reps
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

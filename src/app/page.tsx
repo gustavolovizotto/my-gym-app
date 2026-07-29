@@ -109,68 +109,74 @@ export default function Home() {
   ];
 
   return (
-    <div className="px-4 pt-6 pb-24 animate-fade-in">
+    <div className="px-5 pt-7 pb-2 flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-neutral-content text-sm font-medium mb-1">Bom treino,</p>
-          <h1 className="text-2xl font-extrabold tracking-tight text-base-content">
-            {userName}
-          </h1>
+          <p className="text-sm" style={{ color: "var(--color-neutral-600)" }}>Bom treino,</p>
+          <h1 className="font-display text-[26px] mt-0.5">{userName}</h1>
         </div>
         <SyncBadge />
       </div>
 
       {/* Today's Stats */}
-      <div className="grid grid-cols-3 gap-2 mb-8">
+      <div
+        className="grid grid-cols-3 gap-px border"
+        style={{ background: "var(--color-divider)", borderColor: "var(--color-divider)" }}
+      >
         {todayStats.map(({ label, value, unit, icon: Icon }) => (
-          <div
-            key={label}
-            className="bg-base-200 rounded-xl p-3 border border-base-300 flex flex-col gap-1"
-          >
-            <Icon className="w-3.5 h-3.5 text-primary mb-0.5" />
-            <div className="flex items-baseline gap-0.5">
-              <span className="font-display text-xl text-base-content leading-none">{value}</span>
-              {unit && <span className="text-[10px] text-neutral-content">{unit}</span>}
+          <div key={label} className="bg-base-100 px-2.5 py-3.5 flex flex-col gap-2">
+            <Icon className="w-4 h-4" style={{ color: "var(--color-accent)" }} />
+            <div className="font-display text-[19px] leading-none">
+              {value}
+              {unit && <span className="text-[11px] font-normal font-sans opacity-60 ml-0.5">{unit}</span>}
             </div>
-            <p className="text-[10px] text-neutral-content leading-tight">{label}</p>
+            <div
+              className="text-[10.5px] uppercase tracking-wider"
+              style={{ color: "var(--color-neutral-600)" }}
+            >
+              {label}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Section Title */}
-      <div className="mb-4">
-        <h2 className="font-display text-3xl text-base-content tracking-wide">
-          O QUE TREINARÁ
-        </h2>
-        <h2 className="font-display text-3xl text-primary tracking-wide -mt-1">
-          HOJE?
-        </h2>
+      <div className="font-display text-[30px] leading-[1.08] -tracking-[0.01em]">
+        O QUE TREINARÁ
+        <br />
+        <span style={{ color: "var(--color-accent)" }}>HOJE?</span>
       </div>
 
       {/* Workout Type Cards */}
       <WorkoutSelector />
 
       {/* Recent Activity */}
-      <div className="mt-8">
-        <h3 className="text-sm font-semibold text-neutral-content uppercase tracking-wider mb-3">
-          Atividade Recente
-        </h3>
-        <div className="bg-base-200 rounded-xl border border-base-300 divide-y divide-base-300">
+      <div>
+        <h6 className="mb-2.5">Atividade Recente</h6>
+        <div className="border bg-base-200" style={{ borderColor: "var(--color-divider)" }}>
           {recentActivity.length === 0 ? (
-            <div className="p-4 text-center text-sm text-neutral-content">
+            <div className="p-4 text-center text-sm" style={{ color: "var(--color-neutral-600)" }}>
               Nenhum treino registrado ainda.
             </div>
           ) : (
             recentActivity.map((entry, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-3">
+              <div
+                key={i}
+                className="flex items-start justify-between px-4 py-4"
+                style={{
+                  borderBottom: i < recentActivity.length - 1 ? "1px solid var(--color-divider)" : "none",
+                }}
+              >
                 <div>
-                  <p className="text-sm font-medium text-base-content">{entry.type}</p>
-                  <p className="text-xs text-neutral-content">{entry.date}</p>
+                  <div className="font-display text-[15px]">{entry.type}</div>
+                  <div className="text-xs mt-0.5" style={{ color: "var(--color-neutral-600)" }}>{entry.date}</div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-primary">{entry.volume.toLocaleString('pt-BR')} kg</p>
-                  <p className="text-xs text-neutral-content">{entry.sets} séries</p>
+                  <div className="font-bold text-[15px]" style={{ color: "var(--color-accent-700)" }}>
+                    {entry.volume.toLocaleString('pt-BR')} kg
+                  </div>
+                  <div className="text-xs mt-0.5" style={{ color: "var(--color-neutral-600)" }}>{entry.sets} séries</div>
                 </div>
               </div>
             ))

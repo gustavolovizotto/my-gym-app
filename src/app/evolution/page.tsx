@@ -80,17 +80,15 @@ export default function EvolutionPage() {
   }, [logs, selectedExercise]);
 
   return (
-    <div className="px-4 pt-6 pb-24 animate-fade-in">
-      <header className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/")} className="btn btn-circle btn-sm btn-ghost">
-            <ArrowLeft className="w-5 h-5" />
+    <div className="px-5 pt-6 pb-2 flex flex-col gap-[18px]">
+      <header className="flex justify-between items-start gap-3">
+        <div className="flex items-center gap-3.5">
+          <button onClick={() => router.push("/")} aria-label="Voltar">
+            <ArrowLeft className="w-[22px] h-[22px]" />
           </button>
           <div>
-            <h1 className="font-display text-2xl text-base-content tracking-wide leading-none">
-              Evolução
-            </h1>
-            <p className="text-xs text-neutral-content">Suas métricas</p>
+            <h1 className="text-[22px] font-display leading-none">Evolução</h1>
+            <p className="text-[13px] mt-0.5" style={{ color: "var(--color-neutral-600)" }}>Suas métricas</p>
           </div>
         </div>
         <SyncBadge />
@@ -101,61 +99,56 @@ export default function EvolutionPage() {
           <span className="loading loading-spinner text-primary"></span>
         </div>
       ) : logs.length === 0 ? (
-        <div className="bg-base-200 rounded-xl border border-base-300 p-8 text-center">
-          <p className="text-sm text-neutral-content">Nenhum treino registrado para gerar métricas.</p>
+        <div className="bg-base-200 border p-8 text-center" style={{ borderColor: "var(--color-divider)" }}>
+          <p className="text-sm" style={{ color: "var(--color-neutral-600)" }}>Nenhum treino registrado para gerar métricas.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
-          {/* Progresso por Exercício Chart */}
-          <div className="bg-base-200 rounded-xl border border-base-300 p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <h2 className="font-display text-lg text-base-content leading-none">Carga Máxima</h2>
-                <p className="text-[10px] text-neutral-content">Evolução de peso por exercício</p>
-              </div>
+        <div className="bg-base-200 border p-4 flex flex-col gap-3.5" style={{ borderColor: "var(--color-divider)" }}>
+          <div className="flex items-center gap-2.5">
+            <TrendingUp className="w-[18px] h-[18px]" style={{ color: "var(--color-accent)" }} />
+            <div>
+              <div className="font-display text-base leading-none">Carga Máxima</div>
+              <div className="text-xs mt-0.5" style={{ color: "var(--color-neutral-600)" }}>Evolução de peso por exercício</div>
             </div>
-
-            <select 
-              className="select select-bordered select-sm w-full mb-4 bg-base-100 text-sm"
-              value={selectedExercise}
-              onChange={(e) => setSelectedExercise(e.target.value)}
-            >
-              <option value="all" disabled>Selecione um exercício...</option>
-              {exercises.map(ex => (
-                <option key={ex.id} value={ex.id}>{ex.name}</option>
-              ))}
-            </select>
-
-            {selectedExercise !== "all" ? (
-              exerciseData.length > 0 ? (
-                <div className="h-[200px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={exerciseData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-base-300)" vertical={false} />
-                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--color-neutral-content)' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: 'var(--color-neutral-content)' }} axisLine={false} tickLine={false} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'var(--color-base-100)', borderColor: 'var(--color-base-300)', borderRadius: '8px', fontSize: '12px' }}
-                        itemStyle={{ color: '#f97316', fontWeight: 'bold' }}
-                      />
-                      <Line type="monotone" dataKey="maxWeight" name="Carga Máx (kg)" stroke="#f97316" strokeWidth={3} dot={{ r: 4, fill: '#f97316', strokeWidth: 0 }} activeDot={{ r: 6 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-[150px] flex items-center justify-center text-neutral-content text-sm">
-                  Dados insuficientes para este exercício.
-                </div>
-              )
-            ) : (
-              <div className="h-[150px] flex items-center justify-center text-neutral-content text-sm border-2 border-dashed border-base-300 rounded-lg">
-                Selecione um exercício acima para ver o gráfico.
-              </div>
-            )}
           </div>
+
+          <select
+            className="input font-display font-bold"
+            value={selectedExercise}
+            onChange={(e) => setSelectedExercise(e.target.value)}
+          >
+            <option value="all" disabled>Selecione um exercício...</option>
+            {exercises.map(ex => (
+              <option key={ex.id} value={ex.id}>{ex.name}</option>
+            ))}
+          </select>
+
+          {selectedExercise !== "all" ? (
+            exerciseData.length > 0 ? (
+              <div className="h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={exerciseData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="2 3" stroke="var(--color-divider)" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'var(--color-neutral-600)' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: 'var(--color-neutral-600)' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'var(--color-base-100)', borderColor: 'var(--color-divider)', borderRadius: 0, fontSize: '12px' }}
+                      itemStyle={{ color: 'var(--color-accent)', fontWeight: 'bold' }}
+                    />
+                    <Line type="monotone" dataKey="maxWeight" name="Carga Máx (kg)" stroke="var(--color-accent)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--color-accent)', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-[150px] flex items-center justify-center text-sm" style={{ color: "var(--color-neutral-600)" }}>
+                Dados insuficientes para este exercício.
+              </div>
+            )
+          ) : (
+            <div className="h-[150px] flex items-center justify-center text-sm" style={{ color: "var(--color-neutral-600)", border: "2px dashed var(--color-divider)" }}>
+              Selecione um exercício acima para ver o gráfico.
+            </div>
+          )}
         </div>
       )}
     </div>
