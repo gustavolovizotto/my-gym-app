@@ -372,7 +372,7 @@ export function WorkoutSelector() {
       {/* Modal de Criação */}
       {isModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-60 flex items-end sm:items-center justify-center p-4"
           style={{ background: "color-mix(in srgb, var(--color-base-content) 50%, transparent)" }}
           onClick={() => setIsModalOpen(false)}
         >
